@@ -6,12 +6,15 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
-import { Menu, LayoutDashboard, ImageIcon, VideoIcon, Settings, History, Sparkles } from "lucide-react"
+import { Menu, LayoutDashboard, Users, ImageIcon, VideoIcon, Settings, History, Sparkles, Megaphone, Share2 } from "lucide-react"
 
 const navigation = [
   { name: "Painel", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Personas", href: "/dashboard/personas", icon: Users },
+  { name: "Campanhas", href: "/dashboard/campaigns", icon: Megaphone },
   { name: "Gerador de Imagem", href: "/dashboard/image-generator", icon: ImageIcon },
   { name: "Gerador de Vídeo", href: "/dashboard/video-generator", icon: VideoIcon },
+  { name: "Publicar", href: "/dashboard/social", icon: Share2 },
   { name: "Histórico", href: "/dashboard/history", icon: History },
   { name: "Configurações", href: "/dashboard/settings", icon: Settings },
 ]
@@ -22,7 +25,7 @@ export function MobileNav() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
+      <SheetTrigger asChild suppressHydrationWarning>
         <Button variant="ghost" size="icon" className="lg:hidden">
           <Menu className="h-5 w-5" />
           <span className="sr-only">Alternar menu</span>
