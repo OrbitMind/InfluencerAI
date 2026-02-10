@@ -38,6 +38,18 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.9 0 0);
   --sidebar-ring: oklch(0.7 0.15 200);
+
+  /* Gray scale colors */
+  --gray-50: oklch(0.985 0 0);
+  --gray-100: oklch(0.97 0 0);
+  --gray-200: oklch(0.93 0 0);
+  --gray-300: oklch(0.87 0 0);
+  --gray-400: oklch(0.71 0 0);
+  --gray-500: oklch(0.55 0 0);
+  --gray-600: oklch(0.45 0 0);
+  --gray-700: oklch(0.35 0 0);
+  --gray-800: oklch(0.25 0 0);
+  --gray-900: oklch(0.15 0 0);
 }
 
 .dark {
@@ -73,6 +85,18 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.25 0 0);
   --sidebar-ring: oklch(0.75 0.18 200);
+
+  /* Gray scale colors - dark mode */
+  --gray-50: oklch(0.15 0 0);
+  --gray-100: oklch(0.2 0 0);
+  --gray-200: oklch(0.3 0 0);
+  --gray-300: oklch(0.4 0 0);
+  --gray-400: oklch(0.55 0 0);
+  --gray-500: oklch(0.65 0 0);
+  --gray-600: oklch(0.75 0 0);
+  --gray-700: oklch(0.82 0 0);
+  --gray-800: oklch(0.88 0 0);
+  --gray-900: oklch(0.95 0 0);
 }
 
 @theme inline {
@@ -114,6 +138,18 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Gray scale colors */
+  --color-gray-50: var(--gray-50);
+  --color-gray-100: var(--gray-100);
+  --color-gray-200: var(--gray-200);
+  --color-gray-300: var(--gray-300);
+  --color-gray-400: var(--gray-400);
+  --color-gray-500: var(--gray-500);
+  --color-gray-600: var(--gray-600);
+  --color-gray-700: var(--gray-700);
+  --color-gray-800: var(--gray-800);
+  --color-gray-900: var(--gray-900);
 }
 
 @layer base {
@@ -123,4 +159,31 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Caption Animations (Sprint 4) */
+@keyframes captionFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes captionSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes captionPopScale {
+  0% { opacity: 0; transform: scale(0.5); }
+  70% { transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes captionTypewriter {
+  from { width: 0; overflow: hidden; white-space: nowrap; }
+  to { width: 100%; overflow: hidden; white-space: nowrap; }
+}
+
+@keyframes captionBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
