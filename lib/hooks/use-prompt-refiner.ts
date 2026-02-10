@@ -15,7 +15,7 @@ interface UsePromptRefinerReturn {
 }
 
 export function usePromptRefiner({ type }: UsePromptRefinerOptions): UsePromptRefinerReturn {
-  const { apiKey, googleApiKey, selectedModel, canRefine } = useOpenAI()
+  const { apiKey, isConfigured } = useOpenAI()
   const [isRefining, setIsRefining] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -23,9 +23,8 @@ export function usePromptRefiner({ type }: UsePromptRefinerOptions): UsePromptRe
 
   const refinePrompt = useCallback(
     async (prompt: string): Promise<string | null> => {
-      if (!canRefine) {
-        const providerName = selectedModel.provider === "google" ? "Google" : "OpenAI"
-        setError(`Configure sua chave API do ${providerName} nas configurações`)
+      if (!isConfigured) {
+        setError("Configure sua chave API do OpenAI nas configurações")
         return null
       }
 
@@ -45,9 +44,6 @@ export function usePromptRefiner({ type }: UsePromptRefinerOptions): UsePromptRe
             prompt,
             type,
             apiKey,
-            googleApiKey,
-            model: selectedModel.id,
-            provider: selectedModel.provider,
           }),
         })
 
@@ -66,7 +62,7 @@ export function usePromptRefiner({ type }: UsePromptRefinerOptions): UsePromptRe
         setIsRefining(false)
       }
     },
-    [apiKey, googleApiKey, selectedModel, canRefine, type],
+    [apiKey, isConfigured, type],
   )
 
   return { refinePrompt, isRefining, error, clearError }

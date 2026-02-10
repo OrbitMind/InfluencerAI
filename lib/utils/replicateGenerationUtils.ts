@@ -62,19 +62,21 @@ export async function handleReplicateGeneration<T extends { apiKey: string; mode
   }
 }
 
+const imageSchema = z.object({
+  modelId: z.string().min(1),
+  prompt: z.string().min(1),
+  apiKey: z.string().min(1),
+  aspectRatio: z.string().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+})
+
 /**
  * Configuração para geração de imagens
  */
-export const imageGenerationConfig = {
-  schema: z.object({
-    modelId: z.string().min(1),
-    prompt: z.string().min(1),
-    apiKey: z.string().min(1),
-    aspectRatio: z.string().optional(),
-    width: z.number().optional(),
-    height: z.number().optional(),
-  }),
-  buildInput: (validated: z.infer<ReturnType<typeof imageGenerationConfig.schema.parse>>) => {
+export const imageGenerationConfig: GenerationConfig<z.infer<typeof imageSchema>> = {
+  schema: imageSchema,
+  buildInput: (validated) => {
     const input: Record<string, unknown> = {
       prompt: validated.prompt,
     }
@@ -95,18 +97,20 @@ export const imageGenerationConfig = {
   },
 }
 
+const videoSchema = z.object({
+  modelId: z.string().min(1),
+  prompt: z.string().min(1),
+  apiKey: z.string().min(1),
+  imageUrl: z.string().optional(),
+  duration: z.number().optional(),
+})
+
 /**
  * Configuração para geração de vídeos
  */
-export const videoGenerationConfig = {
-  schema: z.object({
-    modelId: z.string().min(1),
-    prompt: z.string().min(1),
-    apiKey: z.string().min(1),
-    imageUrl: z.string().optional(),
-    duration: z.number().optional(),
-  }),
-  buildInput: (validated: z.infer<ReturnType<typeof videoGenerationConfig.schema.parse>>) => {
+export const videoGenerationConfig: GenerationConfig<z.infer<typeof videoSchema>> = {
+  schema: videoSchema,
+  buildInput: (validated) => {
     const input: Record<string, unknown> = {
       prompt: validated.prompt,
     }

@@ -18,9 +18,24 @@ const COLLECTION_CONFIG = {
   ],
 } as const
 
-const FALLBACK_SEARCH_QUERIES = {
-  video: 'video generation',
-  image: 'image generation',
+/**
+ * Múltiplas queries de busca para capturar mais modelos
+ */
+const SEARCH_QUERIES = {
+  video: [
+    'video generation',
+    'text-to-video',
+    'image-to-video',
+    'video model',
+    'video ai',
+  ],
+  image: [
+    'image generation',
+    'text-to-image',
+    'stable diffusion',
+    'flux',
+    'image model',
+  ],
 } as const
 
 /**
@@ -30,7 +45,7 @@ const FALLBACK_SEARCH_QUERIES = {
  */
 export class ReplicateModelsService {
   private readonly baseUrl = 'https://api.replicate.com/v1'
-  private readonly maxSearchPages = 10
+  private readonly maxSearchPages = 15 // Aumentado para buscar mais modelos
 
   constructor(private apiKey: string) {}
 
@@ -53,7 +68,7 @@ export class ReplicateModelsService {
   /**
    * Busca modelos por múltiplas coleções
    */
-  async fetchCollections(slugs: string[]): Promise<ReplicateModel[]> {
+  async fetchCollections(slugs: readonly string[]): Promise<ReplicateModel[]> {
     const promises = slugs.map(slug => this.fetchCollection(slug))
     const results = await Promise.all(promises)
     return results.flat()
@@ -92,21 +107,42 @@ export class ReplicateModelsService {
   }
 
   /**
-   * Busca modelos com fallback para busca por texto se poucos resultados
+   * Busca modelos com fallback para busca por texto usando múltiplas queries
    */
   async fetchWithFallback(
     type: 'image' | 'video',
-    minResults = 5
+    minResults = 10
   ): Promise<ReplicateModel[]> {
+    // Primeiro busca nas coleções
     let models = await this.fetchByType(type)
 
+    // Se não tiver modelos suficientes, busca usando múltiplas queries
     if (models.length < minResults) {
-      const fallbackQuery = FALLBACK_SEARCH_QUERIES[type]
-      const searchResults = await this.searchModels(fallbackQuery)
-      models = [...models, ...searchResults]
+      const queries = SEARCH_QUERIES[type]
+      const searchPromises = queries.map(query => this.searchModels(query))
+      const searchResults = await Promise.all(searchPromises)
+      models = [...models, ...searchResults.flat()]
     }
 
     return models
+  }
+
+  /**
+   * Busca todos os modelos disponíveis para um tipo usando todas as estratégias
+   */
+  async fetchAllModels(type: 'image' | 'video'): Promise<ReplicateModel[]> {
+    // Busca em paralelo: coleções + todas as queries de busca
+    const collectionPromise = this.fetchByType(type)
+    const queries = SEARCH_QUERIES[type]
+    const searchPromises = queries.map(query => this.searchModels(query))
+
+    const [collectionModels, ...searchResults] = await Promise.all([
+      collectionPromise,
+      ...searchPromises,
+    ])
+
+    // Combina todos os resultados
+    return [...collectionModels, ...searchResults.flat()]
   }
 
   /**

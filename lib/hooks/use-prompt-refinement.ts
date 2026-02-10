@@ -1,8 +1,8 @@
 "use client"
 
-import { useGoogle } from "./google-context"
-import { useLLM } from "./llm-context"
-import { useOpenAI } from "./openai-context"
+import { useGoogle } from "@/lib/context/google-context"
+import { useLLM } from "@/lib/context/llm-context"
+import { useOpenAI } from "@/lib/context/openai-context"
 
 /**
  * Hook composto para facilitar acesso a capacidade de refinamento
