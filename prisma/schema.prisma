@@ -1,0 +1,673 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// AUTENTICAÇÃO (NextAuth.js)
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // Hash bcrypt (apenas para credenciais)
+
+  // Relações
+  accounts      Account[]
+  sessions      Session[]
+  apiKeys       ApiKey[]
+  generations   Generation[]
+  personas      Persona[]
+  campaigns     Campaign[]
+
+  // Billing (Sprint 6)
+  creditBalance      CreditBalance?
+  creditTransactions CreditTransaction[]
+  subscription       Subscription?
+
+  // Social Publishing (Sprint 7)
+  socialAccounts     SocialAccount[]
+  scheduledPosts     ScheduledPost[]
+
+  // Analytics, Batch, Experiments (Sprint 9)
+  analyticsEvents    AnalyticsEvent[]
+  batchJobs          BatchJob[]
+  experiments        Experiment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+
+  createdAt DateTime @default(now())
+
+  @@unique([email, token])
+  @@map("password_reset_tokens")
+}
+
+// ============================================
+// API KEYS CRIPTOGRAFADAS
+// ============================================
+
+model ApiKey {
+  id        String   @id @default(cuid())
+  userId    String
+
+  // Dados criptografados
+  provider  String   // "replicate" | "openai" | "google"
+  encrypted String   // Chave criptografada (hex)
+  iv        String   // Initialization Vector (hex)
+  authTag   String   // Authentication Tag (hex)
+
+  // Metadata
+  name      String?  // Nome amigável (ex: "Minha chave Replicate")
+  lastUsed  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, provider])
+  @@map("api_keys")
+}
+
+// ============================================
+// GERAÇÕES (HISTÓRICO)
+// ============================================
+
+model Generation {
+  id          String   @id @default(cuid())
+  userId      String
+
+  // Tipo e modelo
+  type        String   // "image" | "video"
+  modelId     String   // "google/nano-banana", etc
+
+  // Prompt e configurações
+  prompt      String   @db.Text
+  settings    Json?    // Configurações específicas (JSON)
+
+  // URLs de mídia
+  outputUrl   String   // URL permanente (Cloudinary)
+  publicId    String   // Public ID do Cloudinary (para delete)
+  thumbnailUrl String? // Thumbnail (para vídeos)
+
+  // Metadata
+  fileSize    Int?     // Tamanho em bytes
+  width       Int?
+  height      Int?
+  duration    Int?     // Duração em segundos (vídeos)
+
+  // Relação opcional com Persona
+  personaId   String?
+  persona     Persona?  @relation(fields: [personaId], references: [id], onDelete: SetNull)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId, type])
+  @@index([userId, createdAt])
+  @@index([personaId])
+  @@map("generations")
+}
+
+// ============================================
+// PERSONAS (INFLUENCERS VIRTUAIS)
+// ============================================
+
+model Persona {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Identidade
+  name        String
+  slug        String
+  bio         String?   @db.Text
+
+  // Aparência
+  gender              String?
+  ageRange            String?
+  ethnicity           String?
+  bodyType            String?
+  hairColor           String?
+  hairStyle           String?
+  eyeColor            String?
+  distinctiveFeatures String?  @db.Text
+  styleDescription    String?  @db.Text
+
+  // Configuração de conteúdo
+  niche               String?
+  targetPlatform      String?
+  contentTone         String?
+  language            String   @default("pt-BR")
+
+  // Imagem de referência principal
+  referenceImageUrl   String?
+  referenceImageId    String?
+
+  // Configuração de voz (Sprint 2)
+  voiceProvider       String?           // "elevenlabs"
+  voiceId             String?           // ID da voz no provider
+  voiceName           String?           // Nome amigável da voz
+  voicePreviewUrl     String?           // URL de preview da voz
+  voiceSettings       Json?             // { stability, similarity_boost, style, use_speaker_boost }
+
+  // Prompt base (gerado automaticamente)
+  basePrompt          String?  @db.Text
+
+  // Metadados
+  isActive    Boolean  @default(true)
+  isArchived  Boolean  @default(false)
+
+  // Relações
+  assets      PersonaAsset[]
+  generations Generation[]
+  campaigns   Campaign[]
+  experiments Experiment[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, slug])
+  @@index([userId, isActive])
+  @@index([userId, createdAt])
+  @@map("personas")
+}
+
+model PersonaAsset {
+  id        String   @id @default(cuid())
+  personaId String
+  persona   Persona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
+
+  type      String   // "reference", "generated_image", "generated_video", "avatar"
+  url       String
+  publicId  String?
+  prompt    String?  @db.Text
+  modelId   String?
+  metadata  Json?
+
+  isFavorite Boolean @default(false)
+
+  createdAt  DateTime @default(now())
+
+  @@index([personaId, type])
+  @@index([personaId, createdAt])
+  @@map("persona_assets")
+}
+
+// ============================================
+// TEMPLATES DE CAMPANHA
+// ============================================
+
+model CampaignTemplate {
+  id          String   @id @default(cuid())
+
+  // Identidade
+  name        String
+  slug        String   @unique
+  description String?  @db.Text
+  category    String
+  icon        String?
+
+  // Templates de prompt
+  imagePromptTemplate   String?  @db.Text
+  videoPromptTemplate   String?  @db.Text
+  narrationTemplate     String?  @db.Text
+
+  // Defaults
+  defaultImageModel     String?
+  defaultVideoModel     String?
+  defaultAspectRatio    String?
+  defaultVideoDuration  Int?
+
+  // Configurações
+  overlayConfig Json?    // OverlayConfig
+  variables     Json     @default("[]") // TemplateVariable[]
+
+  // Metadata
+  isSystem  Boolean  @default(false)
+  isActive  Boolean  @default(true)
+
+  // Relações
+  campaigns Campaign[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([isSystem, isActive])
+  @@map("campaign_templates")
+}
+
+// ============================================
+// CAMPANHAS
+// ============================================
+
+model Campaign {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Identificação
+  name        String
+  description String?  @db.Text
+
+  // Referências
+  personaId   String
+  persona     Persona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  templateId  String
+  template    CampaignTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  // Variáveis preenchidas pelo usuário
+  variables   Json?    // Record<string, string>
+
+  // Status de execução
+  status       String   @default("draft") // "draft" | "running" | "completed" | "failed"
+  errorMessage String?  @db.Text
+
+  // Outputs gerados
+  imageUrl           String?
+  imagePublicId      String?
+  videoUrl           String?
+  videoPublicId      String?
+  videoThumbnailUrl  String?
+  audioUrl           String?
+  audioPublicId      String?
+  composedImageUrl   String?
+  composedImagePublicId String?
+
+  // Legendas (Sprint 4)
+  captionPresetId           String?
+  captionCustomStyle        Json?     // Partial<CaptionStyle>
+  captionSegmentationMode   String?   @default("timed")
+  subtitleData              Json?     // SubtitleData
+  srtUrl                    String?
+  composedVideoUrl          String?
+  composedVideoPublicId     String?
+
+  // Lip Sync (Sprint 5)
+  useLipSync              Boolean  @default(false)
+  lipSyncModel            String?
+  lipSyncVideoUrl         String?
+  lipSyncVideoPublicId    String?
+
+  // Log de execução
+  executionLog Json?    // ExecutionLogEntry[]
+
+  // Social Publishing (Sprint 7)
+  scheduledPosts ScheduledPost[]
+
+  // Timestamps
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@index([personaId])
+  @@index([templateId])
+  @@map("campaigns")
+}
+
+// ============================================
+// CRÉDITOS E BILLING (Sprint 6)
+// ============================================
+
+model CreditBalance {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Int      @default(0)
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+
+  @@map("credit_balances")
+}
+
+model CreditTransaction {
+  id           String   @id @default(cuid())
+  userId       String
+  amount       Int        // Positivo = crédito, negativo = débito
+  type         String     // "usage" | "purchase" | "subscription" | "bonus" | "refund"
+  description  String
+  metadata     Json?      // { generationType, campaignId, stripePaymentId, etc. }
+  balanceAfter Int        // Saldo após transação
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, type])
+  @@map("credit_transactions")
+}
+
+model SubscriptionPlan {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  description    String?
+  priceMonthly   Int        // Em centavos (BRL)
+  creditsMonthly Int
+  features       Json       // string[]
+  limits         Json       // { maxPersonas, maxCampaigns, maxStorageMb }
+  stripePriceId  String?    // Stripe Price ID
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+
+  subscriptions  Subscription[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  planId               String
+  stripeSubscriptionId String?  @unique
+  stripeCustomerId     String?
+  status               String   @default("active") // "active" | "canceled" | "past_due" | "trialing"
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean  @default(false)
+
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                 SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stripeCustomerId])
+  @@map("subscriptions")
+}
+
+// ============================================
+// SOCIAL PUBLISHING (Sprint 7)
+// ============================================
+
+model SocialAccount {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  platform        String   // "instagram", "tiktok", "youtube"
+  platformUserId  String   // ID do usuário na plataforma
+  platformUsername String?  // @username
+  displayName     String?
+  avatarUrl       String?
+
+  // Tokens OAuth (criptografados como API keys)
+  accessTokenEncrypted  String?
+  accessTokenIv         String?
+  accessTokenAuthTag    String?
+  refreshTokenEncrypted String?  // Refresh token também criptografado
+  refreshTokenIv        String?
+  refreshTokenAuthTag   String?
+  tokenExpiresAt        DateTime?
+
+  scopes          String?  // Scopes concedidos (comma-separated)
+
+  isActive        Boolean  @default(true)
+  lastSyncAt      DateTime?
+
+  scheduledPosts  ScheduledPost[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, platform, platformUserId])
+  @@index([userId, platform])
+  @@index([userId, isActive])
+  @@map("social_accounts")
+}
+
+model ScheduledPost {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  socialAccountId String
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  campaignId      String?
+  campaign        Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  // Conteúdo
+  mediaUrl        String            // URL da mídia a publicar
+  mediaType       String            // "image", "video", "carousel"
+  caption         String?  @db.Text // Texto/legenda do post
+  hashtags        String?  @db.Text // Hashtags
+
+  // Agendamento
+  scheduledFor    DateTime          // Quando publicar
+  publishedAt     DateTime?         // Quando foi publicado
+
+  // Status
+  status          String   @default("scheduled")
+  // "scheduled", "publishing", "published", "failed", "canceled"
+
+  // Resultado
+  platformPostId  String?  // ID do post na plataforma
+  platformPostUrl String?  // URL do post publicado
+  errorMessage    String?  @db.Text
+
+  // Engagement metrics (Sprint 9 - updated via polling or webhook)
+  likes           Int?
+  comments        Int?
+  shares          Int?
+  views           Int?
+  reach           Int?
+  impressions     Int?
+  engagementRate  Float?
+  metricsUpdatedAt DateTime?
+
+  metadata        Json?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([scheduledFor, status])
+  @@index([socialAccountId])
+  @@index([campaignId])
+  @@map("scheduled_posts")
+}
+
+// ============================================
+// ANALYTICS (Sprint 9)
+// ============================================
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Event
+  eventType   String   // "generation", "campaign_execution", "publish", "download", "lip_sync", "voice_generation"
+  eventData   Json?    // Event-specific data
+
+  // Context
+  personaId   String?
+  campaignId  String?
+  platform    String?  // "instagram", "tiktok", "youtube", "whatsapp"
+
+  // Cost
+  creditsUsed Int      @default(0)
+
+  // Timing
+  durationMs  Int?     // Execution time in ms
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId, eventType])
+  @@index([userId, createdAt])
+  @@index([userId, personaId])
+  @@index([userId, platform])
+  @@map("analytics_events")
+}
+
+// ============================================
+// BATCH GENERATION (Sprint 9)
+// ============================================
+
+model BatchJob {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String   // "campaign_batch", "image_batch", "variation_batch"
+  status    String   @default("queued") // "queued", "running", "completed", "failed", "canceled"
+
+  // Configuration
+  config    Json     // Type-specific configuration
+
+  // Progress
+  totalItems    Int
+  completedItems Int @default(0)
+  failedItems   Int  @default(0)
+
+  // Result
+  results   Json?    // Array of results
+  errorLog  Json?    // Array of errors
+
+  // Timing
+  startedAt     DateTime?
+  completedAt   DateTime?
+  estimatedTime Int?      // Seconds estimated
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@map("batch_jobs")
+}
+
+// ============================================
+// A/B TESTING (Sprint 9)
+// ============================================
+
+model Experiment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+
+  personaId   String
+  persona     Persona  @relation(fields: [personaId], references: [id])
+
+  // What is being tested
+  testVariable String  // "prompt", "model", "caption_style", "posting_time", "platform", "template"
+
+  status      String   @default("draft") // "draft", "generating", "active", "completed"
+
+  variants    ExperimentVariant[]
+
+  // Result
+  winnerId    String?  // ID of winning variant
+  conclusion  String?  @db.Text
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, status])
+  @@map("experiments")
+}
+
+model ExperimentVariant {
+  id            String   @id @default(cuid())
+  experimentId  String
+  experiment    Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  label         String   // "Variante A", "Variante B"
+
+  // Variant configuration
+  config        Json     // { prompt?, modelId?, captionStyle?, platform?, scheduledFor? }
+
+  // Generated campaign
+  campaignId    String?
+
+  // Metrics (updated after publishing)
+  likes         Int?
+  comments      Int?
+  views         Int?
+  shares        Int?
+  engagementRate Float?
+
+  // Result
+  isWinner      Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+
+  @@index([experimentId])
+  @@map("experiment_variants")
+}
