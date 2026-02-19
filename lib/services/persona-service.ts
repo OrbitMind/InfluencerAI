@@ -8,9 +8,10 @@ import type { PersonaVoiceConfig } from '@/lib/types/voice';
 import { Prisma } from '@prisma/client';
 
 const VISUAL_FIELDS: (keyof PersonaAttributes)[] = [
-  'gender', 'ageRange', 'ethnicity', 'bodyType',
+  'name', 'bio', 'gender', 'ageRange', 'ethnicity', 'bodyType',
   'hairColor', 'hairStyle', 'eyeColor',
   'distinctiveFeatures', 'styleDescription',
+  'niche', 'targetPlatform', 'contentTone', 'language',
 ];
 
 export class PersonaService {
