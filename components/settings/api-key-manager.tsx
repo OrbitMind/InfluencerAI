@@ -18,8 +18,8 @@ interface ApiKeyManagerProps {
   helpText: string
   helpLink: string
   isConfigured: boolean
-  onSave: (key: string) => void
-  onClear: () => void
+  onSave: (key: string) => void | Promise<boolean>
+  onClear: () => void | Promise<void>
 }
 
 export function ApiKeyManager({
@@ -33,10 +33,17 @@ export function ApiKeyManager({
 }: ApiKeyManagerProps) {
   const [input, setInput] = useState("")
 
-  const handleSave = () => {
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleSave = async () => {
     if (input.trim()) {
-      onSave(input.trim())
-      setInput("")
+      setIsSaving(true)
+      try {
+        await onSave(input.trim())
+        setInput("")
+      } finally {
+        setIsSaving(false)
+      }
     }
   }
 
@@ -67,8 +74,8 @@ export function ApiKeyManager({
             placeholder={placeholder}
             className="flex-1"
           />
-          <Button onClick={handleSave} disabled={!input.trim()}>
-            Salvar
+          <Button onClick={handleSave} disabled={!input.trim() || isSaving}>
+            {isSaving ? "Salvando..." : "Salvar"}
           </Button>
         </div>
       )}
