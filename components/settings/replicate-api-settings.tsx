@@ -1,10 +1,8 @@
 "use client"
 
-import { ApiKeyInput } from "@/components/shared/api-key-input"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useReplicate } from "@/lib/context/replicate-context"
-import { Trash2 } from "lucide-react"
+import { ApiKeyManager } from "./api-key-manager"
 
 /**
  * Componente para configuração da API Replicate
@@ -12,7 +10,7 @@ import { Trash2 } from "lucide-react"
  * Responsabilidade: gerenciar APENAS configurações da API Replicate
  */
 export function ReplicateApiSettings() {
-  const { clearApiKey, isConfigured } = useReplicate()
+  const { saveApiKey, clearApiKey, isConfigured } = useReplicate()
 
   return (
     <Card>
@@ -20,16 +18,16 @@ export function ReplicateApiSettings() {
         <CardTitle>Configuração da API Replicate</CardTitle>
         <CardDescription>Conecte ao Replicate para habilitar a geração de imagens e vídeos</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <ApiKeyInput />
-        {isConfigured && (
-          <div className="pt-4 border-t border-border">
-            <Button variant="destructive" size="sm" onClick={clearApiKey}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Remover Chave API
-            </Button>
-          </div>
-        )}
+      <CardContent>
+        <ApiKeyManager
+          label="Chave de API Replicate"
+          placeholder="r8_xxxxxxxxxxxx"
+          helpText="Obtenha sua chave de API em"
+          helpLink="https://replicate.com/account/api-tokens"
+          isConfigured={isConfigured}
+          onSave={saveApiKey}
+          onClear={clearApiKey}
+        />
       </CardContent>
     </Card>
   )
