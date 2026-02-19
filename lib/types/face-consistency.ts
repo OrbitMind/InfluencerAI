@@ -1,4 +1,4 @@
-export type FaceConsistencyStrategyName = 'ip-adapter-faceid' | 'instant-id' | 'photomaker';
+export type FaceConsistencyStrategyName = 'pulid' | 'instant-id' | 'photomaker';
 
 export interface FaceConsistencyStrategyConfig {
   name: FaceConsistencyStrategyName;
