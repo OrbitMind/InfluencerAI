@@ -1,33 +1,77 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
 
 interface ReplicateContextType {
-  apiKey: string | null
-  setApiKey: (key: string) => void
-  clearApiKey: () => void
   isConfigured: boolean
+  isLoading: boolean
+  saveApiKey: (key: string) => Promise<boolean>
+  clearApiKey: () => Promise<void>
+  recheckKey: () => Promise<void>
 }
 
 const ReplicateContext = createContext<ReplicateContextType | undefined>(undefined)
 
 export function ReplicateProvider({ children }: { children: ReactNode }) {
-  const [apiKey, setApiKeyState] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("replicate_api_key")
-    }
-    return null
-  })
+  const [isConfigured, setIsConfigured] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const setApiKey = useCallback((key: string) => {
-    setApiKeyState(key)
-    if (typeof window !== "undefined") {
-      localStorage.setItem("replicate_api_key", key)
+  const checkApiKey = useCallback(async () => {
+    try {
+      const res = await fetch('/api/user/api-keys')
+      const data = await res.json()
+      if (data.success && data.data) {
+        const hasReplicate = data.data.some((k: { provider: string }) => k.provider === 'replicate')
+        setIsConfigured(hasReplicate)
+      } else {
+        setIsConfigured(false)
+      }
+    } catch {
+      setIsConfigured(false)
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
-  const clearApiKey = useCallback(() => {
-    setApiKeyState(null)
+  useEffect(() => {
+    checkApiKey()
+  }, [checkApiKey])
+
+  const saveApiKey = useCallback(async (key: string): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/user/api-keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: 'replicate', apiKey: key }),
+      })
+
+      if (!res.ok) return false
+
+      setIsConfigured(true)
+      return true
+    } catch {
+      return false
+    }
+  }, [])
+
+  const clearApiKey = useCallback(async () => {
+    try {
+      const res = await fetch('/api/user/api-keys')
+      const data = await res.json()
+      if (data.success && data.data) {
+        const replicateKey = data.data.find((k: { provider: string }) => k.provider === 'replicate')
+        if (replicateKey) {
+          await fetch(`/api/user/api-keys/${replicateKey.id}`, { method: 'DELETE' })
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting API key:', error)
+    }
+    setIsConfigured(false)
+  }, [])
+
+  // Clean up any legacy localStorage data
+  useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("replicate_api_key")
     }
@@ -36,10 +80,11 @@ export function ReplicateProvider({ children }: { children: ReactNode }) {
   return (
     <ReplicateContext.Provider
       value={{
-        apiKey,
-        setApiKey,
+        isConfigured,
+        isLoading,
+        saveApiKey,
         clearApiKey,
-        isConfigured: !!apiKey,
+        recheckKey: checkApiKey,
       }}
     >
       {children}
