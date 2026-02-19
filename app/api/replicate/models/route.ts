@@ -2,7 +2,11 @@ import { modelDeduplicator } from "@/lib/services/ModelDeduplicatorService"
 import { modelSorter } from "@/lib/services/ModelSorterService"
 import { modelTransformer } from "@/lib/services/ModelTransformerService"
 import { ReplicateModelsService } from "@/lib/services/ReplicateModelsService"
-import { NextResponse, type NextRequest } from "next/server"
+import { ApiKeyService } from "@/lib/services/api-key/api-key.service"
+import { withAuth } from "@/lib/utils/auth"
+import { NextResponse } from "next/server"
+
+const apiKeyService = new ApiKeyService()
 
 /**
  * Rota de API para buscar modelos do Replicate
@@ -17,17 +21,17 @@ import { NextResponse, type NextRequest } from "next/server"
  * - Transformação → ModelTransformerService
  * - Ordenação → ModelSorterService
  */
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request, { userId }) => {
   const { searchParams } = new URL(request.url)
-  const apiKey = request.headers.get("x-replicate-api-key")
   const type = (searchParams.get("type") || "image") as 'image' | 'video'
   const query = searchParams.get("query") || ""
 
-  // Validação
+  const apiKey = await apiKeyService.getApiKey(userId, 'replicate')
+
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Chave API do Replicate não fornecida" },
-      { status: 401 },
+      { error: "API key do Replicate não configurada" },
+      { status: 400 },
     )
   }
 
@@ -47,17 +51,17 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { 
-        models: sortedModels, 
-        total: sortedModels.length 
+      data: {
+        models: sortedModels,
+        total: sortedModels.length
       },
     })
   } catch (error) {
     console.error("Erro ao buscar modelos:", error)
-    
+
     return NextResponse.json(
       { error: "Erro interno ao buscar modelos" },
       { status: 500 },
     )
   }
-}
+})

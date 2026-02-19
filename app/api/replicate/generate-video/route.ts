@@ -45,8 +45,8 @@ export const POST = withCredits('video', async (req, { userId }) => {
       );
     }
 
-    // 2. Criar cliente Replicate
-    const replicate = new Replicate({ auth: replicateKey });
+    // 2. Criar cliente Replicate (useFileOutput: false retorna URLs diretas ao invés de FileOutput objects)
+    const replicate = new Replicate({ auth: replicateKey, useFileOutput: false });
 
     // 3. Construir input
     const input: Record<string, unknown> = {
@@ -62,10 +62,11 @@ export const POST = withCredits('video', async (req, { userId }) => {
       { input }
     );
 
-    // Normalizar output (pode ser string ou array)
+    // Normalizar output (pode ser string ou array de strings)
     const videoUrl = Array.isArray(output) ? output[0] : output;
 
     if (!videoUrl || typeof videoUrl !== 'string') {
+      console.error('Replicate output inesperado:', output);
       throw new Error('Output inválido do Replicate');
     }
 

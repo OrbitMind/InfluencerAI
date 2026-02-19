@@ -26,8 +26,8 @@ export const POST = withAuth(async (req, { userId }) => {
       userId,
       {
         ...validated,
-        strength: validated.strength ?? 0.6,
-        strategy: validated.strategy ?? 'ip-adapter-faceid',
+        strength: validated.strength ?? 0.8,
+        strategy: validated.strategy ?? 'pulid',
       }
     );
 
