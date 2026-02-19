@@ -10,7 +10,7 @@ export class ImageGenerationService implements IImageGenerationService {
   private readonly endpoint = '/api/replicate/generate-image'
 
   async generate(
-    request: GenerateImageRequest & { apiKey: string }
+    request: GenerateImageRequest & { apiKey?: string }
   ): Promise<APIResponse<ReplicateResponse>> {
     try {
       const response = await fetch(this.endpoint, {

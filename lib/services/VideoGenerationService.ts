@@ -10,7 +10,7 @@ export class VideoGenerationService implements IVideoGenerationService {
   private readonly endpoint = '/api/replicate/generate-video'
 
   async generate(
-    request: GenerateVideoRequest & { apiKey: string }
+    request: GenerateVideoRequest & { apiKey?: string }
   ): Promise<APIResponse<ReplicateResponse>> {
     try {
       const response = await fetch(this.endpoint, {
