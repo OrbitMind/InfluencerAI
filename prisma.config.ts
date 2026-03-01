@@ -5,6 +5,6 @@ export default defineConfig({
   schema: 'prisma/schema.prisma',
   datasource: {
     url: env('DATABASE_URL'),
-    directUrl: env('DIRECT_URL'),
+    // directUrl: env('DIRECT_URL'), // Removed: not supported in this Prisma config version
   }
 })
