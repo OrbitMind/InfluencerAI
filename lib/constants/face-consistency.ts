@@ -4,7 +4,7 @@ export const FACE_CONSISTENCY_STRATEGIES: Record<FaceConsistencyStrategyName, Fa
   'pulid': {
     name: 'pulid',
     label: 'PuLID',
-    modelId: 'zsxkib/pulid',
+    modelId: 'bytedance/pulid',
     description: 'Alta preservação de identidade facial com qualidade superior (recomendado)',
     inputMapping: {
       faceImage: 'main_face_image',

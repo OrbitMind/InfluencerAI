@@ -146,6 +146,7 @@ export class CampaignService {
             modelId: options?.imageModel || template.defaultImageModel || 'black-forest-labs/flux-schnell',
             aspectRatio: options?.aspectRatio || template.defaultAspectRatio || '1:1',
             useFaceConsistency: !!persona.referenceImageUrl,
+            faceConsistencyStrategy: options?.faceConsistencyStrategy as import('@/lib/types/face-consistency').FaceConsistencyStrategyName | undefined,
           });
           await this.repository.update(campaignId, userId, {
             imageUrl: result.outputUrl,

@@ -135,6 +135,7 @@ export interface ExecuteCampaignOptions {
   steps?: ExecutionStep[];
   imageModel?: string;
   videoModel?: string;
+  faceConsistencyStrategy?: string;
   aspectRatio?: string;
   videoDuration?: number;
   captionPresetId?: string;

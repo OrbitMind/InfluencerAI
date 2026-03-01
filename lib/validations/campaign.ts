@@ -84,6 +84,7 @@ export const executeCampaignSchema = z.object({
   steps: z.array(z.enum(['image', 'video', 'audio', 'lip-sync', 'compose', 'captions'])).optional(),
   imageModel: z.string().optional(),
   videoModel: z.string().optional(),
+  faceConsistencyStrategy: z.string().optional(),
   aspectRatio: z.string().optional(),
   videoDuration: z.number().int().min(1).max(60).optional(),
   captionPresetId: z.string().optional(),
