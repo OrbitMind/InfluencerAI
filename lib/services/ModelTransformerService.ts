@@ -1,4 +1,8 @@
 import type { ReplicateModel, TransformedModel } from '@/lib/types/replicateModels'
+import { ReplicateModelsService } from './ReplicateModelsService'
+
+/** Temporary instance for schema parsing (no API key needed for detectSourceImageParam) */
+const schemaParser = new ReplicateModelsService('')
 
 /**
  * Serviço responsável por transformar modelos da API Replicate
@@ -7,10 +11,12 @@ import type { ReplicateModel, TransformedModel } from '@/lib/types/replicateMode
  */
 export class ModelTransformerService {
   /**
-   * Transforma um modelo bruto do Replicate em formato padronizado
+   * Transforma um modelo bruto do Replicate em formato padronizado.
+   * Para modelos de vídeo, detecta automaticamente o sourceImageParam
+   * a partir do openapi_schema da versão mais recente.
    */
   transform(model: ReplicateModel, type: 'image' | 'video'): TransformedModel {
-    return {
+    const base: TransformedModel = {
       id: `${model.owner}/${model.name}`,
       name: this.formatName(model.name),
       description: this.truncateDescription(model.description),
@@ -19,6 +25,13 @@ export class ModelTransformerService {
       runCount: model.run_count,
       coverImage: model.cover_image_url,
     }
+
+    if (type === 'video' && model.latest_version?.openapi_schema) {
+      base.sourceImageParam = schemaParser.detectSourceImageParam(model.latest_version.openapi_schema)
+      base.supportsImageInput = true
+    }
+
+    return base
   }
 
   /**

@@ -2,14 +2,12 @@ import type { ReplicateCollectionResponse, ReplicateModel, ReplicateSearchRespon
 
 /**
  * Configuração de coleções por tipo de modelo
- * Princípio: Open/Closed Principle (OCP)
- * Permite extensão sem modificar código existente
+ * Para vídeo: APENAS image-to-video — garante que todos os modelos
+ * aceitam uma imagem de persona como entrada.
  */
 const COLLECTION_CONFIG = {
   video: [
-    'text-to-video',
     'image-to-video',
-    'video-generation',
   ],
   image: [
     'text-to-image',
@@ -17,6 +15,20 @@ const COLLECTION_CONFIG = {
     'diffusion-models',
   ],
 } as const
+
+/**
+ * Nomes de parâmetros conhecidos para imagem de entrada em modelos de vídeo.
+ * Usado para detectar automaticamente o param correto no schema do modelo.
+ */
+const IMAGE_PARAM_PATTERNS = [
+  'first_frame_image',
+  'start_image',
+  'input_image',
+  'init_image',
+  'reference_image',
+  'image_url',
+  'image',
+]
 
 /**
  * Múltiplas queries de busca para capturar mais modelos
@@ -143,6 +155,34 @@ export class ReplicateModelsService {
 
     // Combina todos os resultados
     return [...collectionModels, ...searchResults.flat()]
+  }
+
+  /**
+   * Detecta o nome do parâmetro de imagem de entrada a partir do openapi_schema do modelo.
+   * Retorna 'image' como fallback se não encontrar.
+   */
+  detectSourceImageParam(openApiSchema: unknown): string {
+    try {
+      const schema = openApiSchema as Record<string, unknown>
+      const components = schema?.components as Record<string, unknown> | undefined
+      const schemas = components?.schemas as Record<string, unknown> | undefined
+      const input = schemas?.Input as Record<string, unknown> | undefined
+      const properties = input?.properties as Record<string, { type?: string; format?: string }> | undefined
+      if (!properties) return 'image'
+
+      // Procura pelo primeiro param que bate com os padrões conhecidos
+      for (const pattern of IMAGE_PARAM_PATTERNS) {
+        if (properties[pattern]) return pattern
+      }
+      // Fallback: qualquer param do tipo string/uri com "image" ou "frame" no nome
+      const dynamicMatch = Object.keys(properties).find(k =>
+        /image|frame/.test(k.toLowerCase()) &&
+        (properties[k].type === 'string' || properties[k].format === 'uri')
+      )
+      return dynamicMatch ?? 'image'
+    } catch {
+      return 'image'
+    }
   }
 
   /**

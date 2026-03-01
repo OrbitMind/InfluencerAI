@@ -4,12 +4,35 @@ export interface AIModel {
   description: string
   provider: string
   type: "image" | "video"
+  sourceImageParam?: string  // param name for image-to-video source (default: 'image')
+  supportsImageInput?: boolean
   inputSchema?: Record<string, unknown>
   runCount?: number
   coverImage?: string | null
 }
 
 export const IMAGE_MODELS: AIModel[] = [
+  {
+    id: "google/nano-banana-pro",
+    name: "Nano Banana Pro",
+    description: "Google DeepMind — Gemini 3 Pro, estado da arte em geração de imagens, 4K",
+    provider: "google",
+    type: "image",
+  },
+  {
+    id: "google/nano-banana-2",
+    name: "Nano Banana 2",
+    description: "Google — edição conversacional, fusão multi-imagem, consistência de personagem",
+    provider: "google",
+    type: "image",
+  },
+  {
+    id: "google/nano-banana",
+    name: "Nano Banana",
+    description: "Google Gemini 2.5 Flash — geração 2-3x mais rápida, multimodal",
+    provider: "google",
+    type: "image",
+  },
   {
     id: "black-forest-labs/flux-pro",
     name: "Flux Pro",
@@ -49,32 +72,40 @@ export const IMAGE_MODELS: AIModel[] = [
 
 export const VIDEO_MODELS: AIModel[] = [
   {
-    id: "tencent/hunyuan-video",
-    name: "HunyuanVideo",
-    description: "Geração de vídeo open source da Tencent",
-    provider: "tencent",
+    id: "google/veo-3.1",
+    name: "Veo 3.1",
+    description: "Melhor qualidade geral com áudio nativo — aceita imagem de referência",
+    provider: "google",
     type: "video",
+    sourceImageParam: "image",
+    supportsImageInput: true,
   },
   {
-    id: "minimax/video-01",
-    name: "MiniMax Video",
-    description: "Geração de vídeo de alta qualidade",
-    provider: "minimax",
+    id: "google/veo-3",
+    name: "Veo 3",
+    description: "Alta qualidade com áudio nativo gerado automaticamente",
+    provider: "google",
     type: "video",
+    sourceImageParam: "image",
+    supportsImageInput: true,
   },
   {
-    id: "luma/ray",
-    name: "Luma Ray",
-    description: "Geração de vídeo fotorrealista",
-    provider: "luma",
+    id: "google/veo-3-fast",
+    name: "Veo 3 Fast",
+    description: "Versão rápida e econômica do Veo 3 com áudio nativo",
+    provider: "google",
     type: "video",
+    sourceImageParam: "image",
+    supportsImageInput: true,
   },
   {
-    id: "genmo/mochi-1-preview",
-    name: "Mochi 1",
-    description: "Modelo de vídeo open source",
-    provider: "genmo",
+    id: "kwaivgi/kling-v1.6-pro",
+    name: "Kling v1.6 Pro",
+    description: "Alta fidelidade image-to-video com câmera cinematográfica nativa",
+    provider: "kwaivgi",
     type: "video",
+    sourceImageParam: "image",
+    supportsImageInput: true,
   },
   {
     id: "fofr/kling-v1.5-pro",
@@ -82,13 +113,51 @@ export const VIDEO_MODELS: AIModel[] = [
     description: "Controle de câmera cinematográfico nativo (pan, tilt, zoom, orbit)",
     provider: "fofr",
     type: "video",
+    sourceImageParam: "image",
+    supportsImageInput: true,
+  },
+  {
+    id: "minimax/video-01",
+    name: "MiniMax Video",
+    description: "Geração de vídeo image-to-video com frame inicial",
+    provider: "minimax",
+    type: "video",
+    sourceImageParam: "first_frame_image",
+    supportsImageInput: true,
+  },
+  {
+    id: "luma/ray",
+    name: "Luma Ray",
+    description: "Geração de vídeo fotorrealista",
+    provider: "luma",
+    type: "video",
+    sourceImageParam: "image",
+    supportsImageInput: true,
   },
   {
     id: "stability-ai/wan-2.5",
     name: "Wan 2.5",
-    description: "Geração de vídeo image-to-video de alta fidelidade",
+    description: "Especialista em image-to-video de alta fidelidade",
     provider: "stability-ai",
     type: "video",
+    sourceImageParam: "image",
+    supportsImageInput: true,
+  },
+  {
+    id: "tencent/hunyuan-video",
+    name: "HunyuanVideo",
+    description: "Geração de vídeo open source da Tencent",
+    provider: "tencent",
+    type: "video",
+    supportsImageInput: false,
+  },
+  {
+    id: "genmo/mochi-1-preview",
+    name: "Mochi 1",
+    description: "Modelo de vídeo open source",
+    provider: "genmo",
+    type: "video",
+    supportsImageInput: false,
   },
 ]
 

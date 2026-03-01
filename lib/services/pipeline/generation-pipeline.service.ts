@@ -15,7 +15,8 @@ import type {
   PipelineResult,
 } from '@/lib/types/pipeline';
 import type { VoiceSettings } from '@/lib/types/voice';
-import type { CameraMovement } from '@/lib/types/camera-control';
+import type { CameraMovement } from '@/lib/types/camera-control'
+import { getVideoSourceImageParam } from '@/lib/utils/video-model-params';
 import type { Prisma } from '@prisma/client';
 import { toJsonValue } from '@/lib/utils/prisma-helpers';
 
@@ -151,7 +152,11 @@ export class GenerationPipelineService {
     let input: Record<string, unknown> = { prompt: fullPrompt };
 
     const sourceImage = params.sourceImageUrl || persona.referenceImageUrl;
-    if (sourceImage) input.image = sourceImage;
+    if (sourceImage) {
+      // Use explicit override → then registry → fallback 'image'
+      const sourceImageParam = params.sourceImageParam ?? getVideoSourceImageParam(params.modelId);
+      input[sourceImageParam] = sourceImage;
+    }
     if (params.duration) input.duration = params.duration;
 
     // Enriquecer com camera control se especificado

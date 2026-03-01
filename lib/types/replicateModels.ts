@@ -39,4 +39,6 @@ export interface TransformedModel {
   type: 'image' | 'video'
   runCount: number
   coverImage: string | null
+  sourceImageParam?: string   // param name for passing source image (e.g. 'image', 'first_frame_image')
+  supportsImageInput?: boolean
 }

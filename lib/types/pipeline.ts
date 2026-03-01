@@ -19,6 +19,7 @@ export interface PipelinePersonaVideoParams {
   modelId: string;
   sourceImageUrl?: string;
   duration?: number;
+  sourceImageParam?: string; // override auto-detected param name (e.g. 'first_frame_image')
 }
 
 export interface PipelinePersonaVideoWithVoiceParams extends PipelinePersonaVideoParams {
