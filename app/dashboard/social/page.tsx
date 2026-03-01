@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -19,6 +19,14 @@ const PLATFORMS = [
 ]
 
 export default function SocialPage() {
+  return (
+    <Suspense>
+      <SocialPageContent />
+    </Suspense>
+  )
+}
+
+function SocialPageContent() {
   const searchParams = useSearchParams()
   const [accounts, setAccounts] = useState<SocialAccount[]>([])
   const [scheduledPosts, setScheduledPosts] = useState<any[]>([])

@@ -1,13 +1,10 @@
 "use client"
 
+import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { CampaignWizard } from "@/components/campaigns/campaign-wizard"
 
 export default function NewCampaignPage() {
-  const searchParams = useSearchParams()
-  const personaId = searchParams.get("personaId") || undefined
-  const templateId = searchParams.get("templateId") || undefined
-
   return (
     <div className="space-y-6">
       <div>
@@ -16,8 +13,17 @@ export default function NewCampaignPage() {
           Crie uma campanha de conteúdo usando um template e uma persona
         </p>
       </div>
-
-      <CampaignWizard initialPersonaId={personaId} initialTemplateId={templateId} />
+      <Suspense>
+        <CampaignWizardWithParams />
+      </Suspense>
     </div>
   )
+}
+
+function CampaignWizardWithParams() {
+  const searchParams = useSearchParams()
+  const personaId = searchParams.get("personaId") || undefined
+  const templateId = searchParams.get("templateId") || undefined
+
+  return <CampaignWizard initialPersonaId={personaId} initialTemplateId={templateId} />
 }
