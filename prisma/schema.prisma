@@ -43,6 +43,10 @@ model User {
   batchJobs          BatchJob[]
   experiments        Experiment[]
 
+  // Novas features
+  productAssets      ProductAsset[]
+  communityPosts     CommunityPost[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -225,6 +229,7 @@ model Persona {
   generations Generation[]
   campaigns   Campaign[]
   experiments Experiment[]
+  moodboard   Moodboard?
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -280,6 +285,7 @@ model CampaignTemplate {
   defaultVideoModel     String?
   defaultAspectRatio    String?
   defaultVideoDuration  Int?
+  defaultCameraMovement String?
 
   // Configurações
   overlayConfig Json?    // OverlayConfig
@@ -670,4 +676,118 @@ model ExperimentVariant {
 
   @@index([experimentId])
   @@map("experiment_variants")
+}
+
+// ============================================
+// MOODBOARD (Direção Criativa Visual)
+// ============================================
+
+model Moodboard {
+  id           String          @id @default(cuid())
+  personaId    String          @unique
+  persona      Persona         @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  items        MoodboardItem[]
+  colorPalette Json?           // string[] — hex colors
+  styleTags    String[]        // ["cinematic", "golden hour", "minimalist"]
+  aiSummary    String?         @db.Text
+
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@map("moodboards")
+}
+
+model MoodboardItem {
+  id          String    @id @default(cuid())
+  moodboardId String
+  moodboard   Moodboard @relation(fields: [moodboardId], references: [id], onDelete: Cascade)
+
+  imageUrl    String
+  publicId    String
+  caption     String?
+  category    String?   // "lighting" | "outfit" | "background" | "pose" | "color_scheme"
+  sortOrder   Int       @default(0)
+
+  createdAt   DateTime  @default(now())
+
+  @@index([moodboardId])
+  @@map("moodboard_items")
+}
+
+// ============================================
+// FASHION FACTORY + PRODUCT PLACEMENT
+// ============================================
+
+model ProductAsset {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name         String
+  imageUrl     String
+  publicId     String
+  bgRemovedUrl String?
+  bgRemovedId  String?
+  brandName    String?
+  category     String?  // "clothing" | "accessories" | "beauty" | "electronics" | "food"
+  metadata     Json?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, category])
+  @@map("product_assets")
+}
+
+// ============================================
+// COMMUNITY GALLERY
+// ============================================
+
+model CommunityPost {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  generationId String?
+  campaignId   String?
+  title        String?
+  description  String?   @db.Text
+  mediaUrl     String
+  mediaType    String    // "image" | "video"
+  thumbnailUrl String?
+  isPublic     Boolean   @default(false)
+  tags         String[]
+  likes        Int       @default(0)
+  views        Int       @default(0)
+
+  contestId    String?
+  contest      Contest?  @relation(fields: [contestId], references: [id], onDelete: SetNull)
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId, isPublic])
+  @@index([isPublic, createdAt])
+  @@index([contestId])
+  @@map("community_posts")
+}
+
+model Contest {
+  id          String          @id @default(cuid())
+  title       String
+  description String          @db.Text
+  prize       String
+  theme       String
+  startsAt    DateTime
+  endsAt      DateTime
+  isActive    Boolean         @default(true)
+  entries     CommunityPost[]
+  winnerId    String?
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([isActive, endsAt])
+  @@map("contests")
 }
