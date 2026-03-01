@@ -4,7 +4,9 @@ import { CreditService } from '@/lib/services/billing/credit.service';
 import { SubscriptionService } from '@/lib/services/billing/subscription.service';
 import { CREDIT_COSTS, type CreditOperationType } from '@/lib/types/billing';
 
-type AuthHandler = (req: NextRequest, context: { userId: string }) => Promise<NextResponse>;
+type AuthContext = { userId: string; params?: Record<string, string> }
+type AuthHandler = (req: NextRequest, context: AuthContext) => Promise<NextResponse>;
+type RouteParams = { params?: Record<string, string> | Promise<Record<string, string>> }
 
 /**
  * Higher-Order Function para verificar e consumir créditos
@@ -22,11 +24,13 @@ export function withCredits(
   operationType: CreditOperationType,
   handler: AuthHandler
 ) {
-  return async (req: NextRequest, routeParams?: unknown) => {
+  return async (req: NextRequest, routeParams?: RouteParams) => {
     try {
       const user = await requireAuth();
       const userId = user.id;
       const cost = CREDIT_COSTS[operationType];
+      const rawParams = routeParams?.params;
+      const params = rawParams instanceof Promise ? await rawParams : rawParams;
 
       // Check credits before execution
       if (cost > 0) {
@@ -47,7 +51,7 @@ export function withCredits(
       }
 
       // Execute the original handler
-      const response = await handler(req, { userId });
+      const response = await handler(req, { userId, params });
 
       // Consume credits only on success
       if (cost > 0 && response.status >= 200 && response.status < 300) {
@@ -57,14 +61,12 @@ export function withCredits(
             endpoint: req.nextUrl.pathname,
           });
         } catch {
-          // Credit consumption failed after successful generation
-          // Log but don't fail the response
-          console.error(`Failed to consume credits for ${operationType} (userId: ${userId})`);
+          // Credit consumption failed after successful generation — log but don't fail response
         }
       }
 
       return response;
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         { success: false, error: 'Não autenticado' },
         { status: 401 }
@@ -83,10 +85,12 @@ export function withPlanLimit(
   resource: 'personas' | 'campaigns',
   handler: AuthHandler
 ) {
-  return async (req: NextRequest, routeParams?: unknown) => {
+  return async (req: NextRequest, routeParams?: RouteParams) => {
     try {
       const user = await requireAuth();
       const userId = user.id;
+      const rawParams = routeParams?.params;
+      const params = rawParams instanceof Promise ? await rawParams : rawParams;
 
       const subscriptionService = new SubscriptionService();
       const check = await subscriptionService.checkPlanLimit(userId, resource);
@@ -104,8 +108,8 @@ export function withPlanLimit(
         );
       }
 
-      return await handler(req, { userId });
-    } catch (error) {
+      return await handler(req, { userId, params });
+    } catch {
       return NextResponse.json(
         { success: false, error: 'Não autenticado' },
         { status: 401 }
