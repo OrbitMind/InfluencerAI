@@ -13,6 +13,10 @@ export interface CreditCost {
   compose: number;
   captions: number;
   composition: number;  // Sprint 9 - video concat/merge
+  // Novas features
+  'fashion-tryon': number;
+  'product-placement': number;
+  motion: number;
 }
 
 export const CREDIT_COSTS: CreditCost = {
@@ -23,6 +27,9 @@ export const CREDIT_COSTS: CreditCost = {
   compose: 0,
   captions: 0,
   composition: 2,  // Video concatenation/merge
+  'fashion-tryon': 2,
+  'product-placement': 2,
+  motion: 3,
 };
 
 export type CreditOperationType = keyof CreditCost;

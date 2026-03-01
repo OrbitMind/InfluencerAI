@@ -76,6 +76,20 @@ export const VIDEO_MODELS: AIModel[] = [
     provider: "genmo",
     type: "video",
   },
+  {
+    id: "fofr/kling-v1.5-pro",
+    name: "Kling v1.5 Pro",
+    description: "Controle de câmera cinematográfico nativo (pan, tilt, zoom, orbit)",
+    provider: "fofr",
+    type: "video",
+  },
+  {
+    id: "stability-ai/wan-2.5",
+    name: "Wan 2.5",
+    description: "Geração de vídeo image-to-video de alta fidelidade",
+    provider: "stability-ai",
+    type: "video",
+  },
 ]
 
 export interface LLMModel {
