@@ -1,106 +1,88 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { SlugService } from '@/lib/services/slug-service'
-import { prisma } from '@/lib/db'
 
 describe('SlugService', () => {
-  let slugService: SlugService
-
   beforeEach(() => {
-    slugService = new SlugService()
     vi.clearAllMocks()
   })
 
   describe('generateSlug', () => {
     it('converte para lowercase', () => {
-      const result = slugService.generateSlug('HELLO WORLD')
-      expect(result).toBe('hello-world')
+      expect(SlugService.generateSlug('HELLO WORLD')).toBe('hello-world')
     })
 
     it('substitui espaços por hifens', () => {
-      const result = slugService.generateSlug('hello world test')
-      expect(result).toBe('hello-world-test')
+      expect(SlugService.generateSlug('hello world test')).toBe('hello-world-test')
     })
 
     it('remove acentos', () => {
-      const result = slugService.generateSlug('José André Ação')
-      expect(result).toBe('jose-andre-acao')
+      expect(SlugService.generateSlug('José André Ação')).toBe('jose-andre-acao')
     })
 
     it('remove caracteres especiais', () => {
-      const result = slugService.generateSlug('hello@world#test!')
-      expect(result).toBe('hello-world-test')
+      expect(SlugService.generateSlug('hello@world#test!')).toBe('hello-world-test')
     })
 
     it('lida com múltiplos espaços consecutivos', () => {
-      const result = slugService.generateSlug('hello    world')
-      expect(result).toBe('hello-world')
+      expect(SlugService.generateSlug('hello    world')).toBe('hello-world')
     })
 
     it('remove hifens do início e fim', () => {
-      const result = slugService.generateSlug('  hello world  ')
-      expect(result).toBe('hello-world')
+      expect(SlugService.generateSlug('  hello world  ')).toBe('hello-world')
     })
 
     it('lida com string vazia', () => {
-      const result = slugService.generateSlug('')
-      expect(result).toBe('')
+      expect(SlugService.generateSlug('')).toBe('')
     })
 
     it('lida com apenas espaços', () => {
-      const result = slugService.generateSlug('   ')
-      expect(result).toBe('')
+      expect(SlugService.generateSlug('   ')).toBe('')
     })
 
     it('preserva números', () => {
-      const result = slugService.generateSlug('Test 123')
-      expect(result).toBe('test-123')
+      expect(SlugService.generateSlug('Test 123')).toBe('test-123')
     })
   })
 
   describe('generateUniqueSlug', () => {
     it('retorna slug base se não existe', async () => {
-      vi.mocked(prisma.persona.findFirst).mockResolvedValue(null)
+      const existsCheck = vi.fn().mockResolvedValue(false)
 
-      const result = await slugService.generateUniqueSlug('test-slug', 'persona')
+      const result = await SlugService.generateUniqueSlug('test slug', 'user123', existsCheck)
 
       expect(result).toBe('test-slug')
-      expect(prisma.persona.findFirst).toHaveBeenCalledWith({
-        where: { slug: 'test-slug' },
-      })
+      expect(existsCheck).toHaveBeenCalledWith('test-slug', 'user123')
     })
 
     it('adiciona -2 se slug já existe', async () => {
-      vi.mocked(prisma.persona.findFirst)
-        .mockResolvedValueOnce({ slug: 'test-slug' } as any)
-        .mockResolvedValueOnce(null)
+      const existsCheck = vi.fn()
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false)
 
-      const result = await slugService.generateUniqueSlug('test-slug', 'persona')
+      const result = await SlugService.generateUniqueSlug('test slug', 'user123', existsCheck)
 
       expect(result).toBe('test-slug-2')
     })
 
     it('incrementa até encontrar único', async () => {
-      vi.mocked(prisma.persona.findFirst)
-        .mockResolvedValueOnce({ slug: 'test-slug' } as any)
-        .mockResolvedValueOnce({ slug: 'test-slug-2' } as any)
-        .mockResolvedValueOnce({ slug: 'test-slug-3' } as any)
-        .mockResolvedValueOnce(null)
+      const existsCheck = vi.fn()
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false)
 
-      const result = await slugService.generateUniqueSlug('test-slug', 'persona')
+      const result = await SlugService.generateUniqueSlug('test slug', 'user123', existsCheck)
 
       expect(result).toBe('test-slug-4')
-      expect(prisma.persona.findFirst).toHaveBeenCalledTimes(4)
+      expect(existsCheck).toHaveBeenCalledTimes(4)
     })
 
-    it('funciona para model campaignTemplate', async () => {
-      vi.mocked(prisma.campaignTemplate.findFirst).mockResolvedValue(null)
+    it('passa userId corretamente para existsCheck', async () => {
+      const existsCheck = vi.fn().mockResolvedValue(false)
 
-      const result = await slugService.generateUniqueSlug('template-slug', 'campaignTemplate')
+      await SlugService.generateUniqueSlug('minha persona', 'abc-123', existsCheck)
 
-      expect(result).toBe('template-slug')
-      expect(prisma.campaignTemplate.findFirst).toHaveBeenCalledWith({
-        where: { slug: 'template-slug' },
-      })
+      expect(existsCheck).toHaveBeenCalledWith('minha-persona', 'abc-123')
     })
   })
 })

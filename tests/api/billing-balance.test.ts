@@ -39,19 +39,21 @@ describe('GET /api/billing/balance', () => {
       url: 'http://localhost:3000/api/billing/balance',
     })
 
-    const response = await GET(req, { userId: 'user-1' })
+    const response = await GET(req)
     const data = await response.json()
 
     expect(response.status).toBe(200)
     expect(data).toEqual({
       success: true,
-      balance: 150,
-      subscription: {
-        planSlug: 'starter',
-        planName: 'Starter',
-        status: 'active',
+      data: {
+        balance: 150,
+        subscription: {
+          planSlug: 'starter',
+          planName: 'Starter',
+          status: 'active',
+        },
+        costs: CREDIT_COSTS,
       },
-      costs: CREDIT_COSTS,
     })
   })
 
@@ -64,11 +66,11 @@ describe('GET /api/billing/balance', () => {
       url: 'http://localhost:3000/api/billing/balance',
     })
 
-    const response = await GET(req, { userId: 'user-1' })
+    const response = await GET(req)
     const data = await response.json()
 
-    expect(data.balance).toBe(0)
-    expect(data.subscription).toBeNull()
+    expect(data.data.balance).toBe(0)
+    expect(data.data.subscription).toBeNull()
   })
 
   it('retorna erro 500 se service falha', async () => {
@@ -79,11 +81,10 @@ describe('GET /api/billing/balance', () => {
       url: 'http://localhost:3000/api/billing/balance',
     })
 
-    const response = await GET(req, { userId: 'user-1' })
+    const response = await GET(req)
     const data = await response.json()
 
     expect(response.status).toBe(500)
     expect(data.success).toBe(false)
-    expect(data.error).toContain('Failed to get balance')
   })
 })

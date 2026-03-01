@@ -269,7 +269,7 @@ describe('CreditService', () => {
 
       expect(mockRepository.getTransactions).toHaveBeenCalledWith('user-1', { page: 1, limit: 20 })
       expect(result.transactions).toEqual(mockTransactions)
-      expect(result.total).toBe(2)
+      expect(result.pagination.total).toBe(2)
     })
   })
 })
