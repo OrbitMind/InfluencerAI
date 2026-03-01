@@ -100,7 +100,7 @@ export default function MoodboardPage() {
           </h1>
           <p className="text-sm text-muted-foreground">Defina a identidade visual com referências de estilo</p>
         </div>
-        <Button className="ml-auto" onClick={handleSave} disabled={isSaving} size="sm">
+        <Button className="ml-auto cursor-pointer" onClick={handleSave} disabled={isSaving} size="sm">
           {isSaving ? <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />Salvando...</> : <><Save className="h-3.5 w-3.5 mr-2" />Salvar</>}
         </Button>
       </div>

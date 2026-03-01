@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Upload, Loader2, ImageIcon } from 'lucide-react'
@@ -17,13 +17,9 @@ interface MoodboardCanvasProps {
 
 export function MoodboardCanvas({ personaId, items, onItemAdded, onItemDeleted }: MoodboardCanvasProps) {
   const [isUploading, setIsUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return
-
-    // Reset so the same file can be selected again
-    if (fileInputRef.current) fileInputRef.current.value = ''
 
     setIsUploading(true)
     let successCount = 0
@@ -99,19 +95,18 @@ export function MoodboardCanvas({ personaId, items, onItemAdded, onItemDeleted }
 
   return (
     <div className="space-y-4">
-      <div
-        className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
-        onClick={() => fileInputRef.current?.click()}
+      <label
+        className="block border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); handleFileUpload(e.dataTransfer.files) }}
       >
         <input
-          ref={fileInputRef}
           type="file"
           accept="image/*"
           multiple
-          className="hidden"
-          onChange={(e) => handleFileUpload(e.target.files)}
+          className="sr-only"
+          onChange={(e) => { handleFileUpload(e.target.files); e.target.value = '' }}
+          disabled={isUploading}
         />
         {isUploading ? (
           <div className="flex flex-col items-center gap-2">
@@ -125,7 +120,7 @@ export function MoodboardCanvas({ personaId, items, onItemAdded, onItemDeleted }
             <p className="text-xs text-muted-foreground">PNG, JPG, WEBP — múltiplas imagens suportadas</p>
           </div>
         )}
-      </div>
+      </label>
 
       {items.length === 0 ? (
         <Card className="border-dashed">

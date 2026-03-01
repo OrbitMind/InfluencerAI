@@ -51,7 +51,7 @@ export function MoodboardAiSummary({ personaId, currentSummary, onSummaryGenerat
           onClick={generateSummary}
           disabled={isGenerating}
           size="sm"
-          className="w-full"
+          className="w-full cursor-pointer"
         >
           {isGenerating ? (
             <>
