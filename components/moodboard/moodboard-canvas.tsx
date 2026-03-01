@@ -22,7 +22,11 @@ export function MoodboardCanvas({ personaId, items, onItemAdded, onItemDeleted }
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return
 
+    // Reset so the same file can be selected again
+    if (fileInputRef.current) fileInputRef.current.value = ''
+
     setIsUploading(true)
+    let successCount = 0
     try {
       for (const file of Array.from(files)) {
         if (!file.type.startsWith('image/')) {
@@ -30,22 +34,25 @@ export function MoodboardCanvas({ personaId, items, onItemAdded, onItemDeleted }
           continue
         }
 
-        // Upload via Cloudinary (usando o endpoint existente da plataforma)
         const formData = new FormData()
         formData.append('file', file)
-        formData.append('upload_preset', 'influencer_ai')
 
-        const uploadRes = await fetch('/api/upload', {
+        const uploadRes = await fetch('/api/upload/image', {
           method: 'POST',
           body: formData,
         })
 
         if (!uploadRes.ok) {
-          toast.error(`Falha ao fazer upload de ${file.name}`)
+          const errData = await uploadRes.json().catch(() => ({}))
+          toast.error(errData?.error ?? `Falha ao fazer upload de ${file.name}`)
           continue
         }
 
         const uploadData = await uploadRes.json()
+        if (!uploadData.url || !uploadData.publicId) {
+          toast.error(`Resposta inválida ao fazer upload de ${file.name}`)
+          continue
+        }
 
         const res = await fetch(`/api/personas/${personaId}/moodboard/items`, {
           method: 'POST',
@@ -57,10 +64,18 @@ export function MoodboardCanvas({ personaId, items, onItemAdded, onItemDeleted }
         })
 
         const data = await res.json()
-        if (!data.success) throw new Error(data.error)
+        if (!data.success) {
+          toast.error(data.error ?? 'Erro ao salvar item no moodboard')
+          continue
+        }
+
         onItemAdded(data.data)
+        successCount++
       }
-      toast.success('Imagens adicionadas ao moodboard')
+
+      if (successCount > 0) {
+        toast.success(`${successCount} ${successCount === 1 ? 'imagem adicionada' : 'imagens adicionadas'} ao moodboard`)
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Erro ao adicionar imagem')
     } finally {

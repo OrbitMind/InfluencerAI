@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ImageIcon, VideoIcon, Pencil, Megaphone, Mic } from "lucide-react"
+import { ImageIcon, VideoIcon, Pencil, Megaphone, Mic, LayoutGrid } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PERSONA_NICHES, PERSONA_PLATFORMS, PERSONA_TONES } from "@/lib/types/persona"
@@ -82,6 +82,12 @@ export function PersonaHeader({ persona, onEdit, onLipSync }: PersonaHeaderProps
             <Link href={`/dashboard/campaigns/new?personaId=${persona.id}`}>
               <Megaphone className="h-4 w-4 mr-2" />
               Nova Campanha
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/dashboard/personas/${persona.id}/moodboard`}>
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Moodboard
             </Link>
           </Button>
           {persona.referenceImageUrl && persona.voiceId && onLipSync && (
