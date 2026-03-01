@@ -54,12 +54,11 @@ export async function GET(
     return NextResponse.redirect(
       `${process.env.NEXTAUTH_URL}/dashboard/social?success=connected&platform=${platform}`
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('OAuth callback error:', error)
+    const message = error instanceof Error ? error.message : 'connection_failed'
     return NextResponse.redirect(
-      `${process.env.NEXTAUTH_URL}/dashboard/social?error=${encodeURIComponent(
-        error.message || 'connection_failed'
-      )}`
+      `${process.env.NEXTAUTH_URL}/dashboard/social?error=${encodeURIComponent(message)}`
     )
   }
 }

@@ -39,39 +39,41 @@ async function handler(req: NextRequest, context: { userId: string }) {
       data: post,
       message: 'Post scheduled successfully',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Schedule error:', error)
 
-    if (error.message?.includes('not found')) {
+    const message = error instanceof Error ? error.message : 'Failed to schedule post'
+
+    if (message.includes('not found')) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: message },
         { status: 404 }
       )
     }
 
-    if (error.message?.includes('disconnected')) {
+    if (message.includes('disconnected')) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: message },
         { status: 403 }
       )
     }
 
-    if (error.message?.includes('future')) {
+    if (message.includes('future')) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: message },
         { status: 400 }
       )
     }
 
-    if (error.message?.includes('not accessible')) {
+    if (message.includes('not accessible')) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: message },
         { status: 400 }
       )
     }
 
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to schedule post' },
+      { success: false, error: message },
       { status: 500 }
     )
   }

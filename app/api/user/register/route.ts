@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       data: user,
       message: 'Usuário criado com sucesso'
     }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error registering user:', error);
 
     if (error instanceof z.ZodError) {
@@ -55,8 +55,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const message = error instanceof Error ? error.message : 'Erro inesperado'
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: message },
       { status: 500 }
     );
   }

@@ -6,8 +6,9 @@ import { updateCommunityPostSchema } from '@/lib/validations/community'
 
 const communityPostService = new CommunityPostService()
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, context: { params: Promise<{ id: string }> | { id: string } }) {
   try {
+    const params = context.params instanceof Promise ? await context.params : context.params
     const post = await communityPostService.get(params.id)
     return NextResponse.json({ success: true, data: post })
   } catch (error: unknown) {

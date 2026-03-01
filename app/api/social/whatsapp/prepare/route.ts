@@ -43,10 +43,11 @@ async function handler(req: NextRequest, context: { userId: string }) {
       needsTrim: whatsAppMedia.needsTrim,
       instructions: whatsAppMedia.instructions,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[WhatsApp Prepare Error]:', error)
+    const message = error instanceof Error ? error.message : 'Failed to prepare media for WhatsApp'
     return NextResponse.json(
-      { error: error.message || 'Failed to prepare media for WhatsApp' },
+      { error: message },
       { status: 500 }
     )
   }

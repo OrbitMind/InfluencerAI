@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createLogger } from '@/lib/utils/logger';
 import { GenerationService } from '@/lib/services/generation/generation.service';
 import { withAuth } from '@/lib/utils/auth';
+
+const logger = createLogger('history-id');
 
 const generationService = new GenerationService();
 
@@ -34,10 +37,11 @@ export const GET = withAuth(async (req, { userId }) => {
       success: true,
       data: generation
     });
-  } catch (error: any) {
-    console.error('Error fetching generation:', error);
+  } catch (error: unknown) {
+    logger.error('Error fetching generation:', { error });
+    const message = error instanceof Error ? error.message : 'Erro inesperado'
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: message },
       { status: 500 }
     );
   }
@@ -66,10 +70,11 @@ export const DELETE = withAuth(async (req, { userId }) => {
       success: true,
       message: 'Geração deletada com sucesso'
     });
-  } catch (error: any) {
-    console.error('Error deleting generation:', error);
+  } catch (error: unknown) {
+    logger.error('Error deleting generation:', { error });
+    const message = error instanceof Error ? error.message : 'Erro inesperado'
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: message },
       { status: 500 }
     );
   }

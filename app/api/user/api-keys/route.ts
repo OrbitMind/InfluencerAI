@@ -17,10 +17,11 @@ export const GET = withAuth(async (req, { userId }) => {
       success: true,
       data: apiKeys
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error listing API keys:', error);
+    const message = error instanceof Error ? error.message : 'Erro inesperado'
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: message },
       { status: 500 }
     );
   }
@@ -56,7 +57,7 @@ export const POST = withAuth(async (req, { userId }) => {
         name: apiKey.name
       }
     }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error saving API key:', error);
 
     if (error instanceof z.ZodError) {
@@ -66,8 +67,9 @@ export const POST = withAuth(async (req, { userId }) => {
       );
     }
 
+    const message = error instanceof Error ? error.message : 'Erro inesperado'
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: message },
       { status: 500 }
     );
   }

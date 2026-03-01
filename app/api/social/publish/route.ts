@@ -37,25 +37,31 @@ async function handler(req: NextRequest, context: { userId: string }) {
       data: result,
       message: 'Published successfully',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Publish error:', error)
 
+    const message = error instanceof Error ? error.message : 'Failed to publish'
+
     // Handle specific errors
-    if (error.message?.includes('not found')) {
+    if (message.includes('not found')) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: message },
         { status: 404 }
       )
     }
 
-    if (error.message?.includes('disconnected')) {
+    if (message.includes('disconnected')) {
       return NextResponse.json(
-        { success: false, error: error.message, code: 'ACCOUNT_DISCONNECTED' },
+        { success: false, error: message, code: 'ACCOUNT_DISCONNECTED' },
         { status: 403 }
       )
     }
 
-    if (error.statusCode === 429) {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      (error as { statusCode?: number }).statusCode === 429
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -69,7 +75,7 @@ async function handler(req: NextRequest, context: { userId: string }) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to publish',
+        error: message,
         code: 'PUBLISH_FAILED',
       },
       { status: 500 }

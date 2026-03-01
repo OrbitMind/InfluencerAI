@@ -44,25 +44,27 @@ async function patchHandler(
       data: post,
       message: 'Post rescheduled successfully',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Reschedule error:', error)
 
-    if (error.message?.includes('not found')) {
+    const message = error instanceof Error ? error.message : 'Failed to reschedule post'
+
+    if (message.includes('not found')) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: message },
         { status: 404 }
       )
     }
 
-    if (error.message?.includes('Cannot reschedule')) {
+    if (message.includes('Cannot reschedule')) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: message },
         { status: 400 }
       )
     }
 
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to reschedule post' },
+      { success: false, error: message },
       { status: 500 }
     )
   }
@@ -84,25 +86,27 @@ async function deleteHandler(
       data: post,
       message: 'Post canceled successfully',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Cancel error:', error)
 
-    if (error.message?.includes('not found')) {
+    const message = error instanceof Error ? error.message : 'Failed to cancel post'
+
+    if (message.includes('not found')) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: message },
         { status: 404 }
       )
     }
 
-    if (error.message?.includes('Cannot cancel')) {
+    if (message.includes('Cannot cancel')) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: message },
         { status: 400 }
       )
     }
 
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to cancel post' },
+      { success: false, error: message },
       { status: 500 }
     )
   }

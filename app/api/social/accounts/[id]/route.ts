@@ -21,10 +21,11 @@ async function handler(
       success: true,
       message: 'Account disconnected successfully',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to disconnect account'
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to disconnect account' },
-      { status: error.message?.includes('not found') ? 404 : 500 }
+      { success: false, error: message },
+      { status: message.includes('not found') ? 404 : 500 }
     )
   }
 }

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createLogger } from '@/lib/utils/logger';
 import Replicate from 'replicate';
 import { ApiKeyService } from '@/lib/services/api-key/api-key.service';
 import { GenerationService } from '@/lib/services/generation/generation.service';
 import { withCredits } from '@/lib/utils/billing-middleware';
+
+const logger = createLogger('generate-image');
 
 const apiKeyService = new ApiKeyService();
 const generationService = new GenerationService();
@@ -68,7 +71,7 @@ export const POST = withCredits('image', async (req, { userId }) => {
     const imageUrl = Array.isArray(output) ? output[0] : output;
 
     if (!imageUrl || typeof imageUrl !== 'string') {
-      console.error('Replicate output inesperado:', output);
+      logger.error('Replicate output inesperado:', { output });
       throw new Error('Output inválido do Replicate');
     }
 
@@ -93,8 +96,8 @@ export const POST = withCredits('image', async (req, { userId }) => {
         createdAt: generation.createdAt
       }
     });
-  } catch (error: any) {
-    console.error('Image generation error:', error);
+  } catch (error: unknown) {
+    logger.error('Image generation error:', { error });
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -103,8 +106,9 @@ export const POST = withCredits('image', async (req, { userId }) => {
       );
     }
 
+    const message = error instanceof Error ? error.message : 'Falha ao gerar imagem'
     return NextResponse.json(
-      { success: false, error: error.message || 'Falha ao gerar imagem' },
+      { success: false, error: message },
       { status: 500 }
     );
   }

@@ -37,7 +37,7 @@ export const GET = withAuth(async (req, { userId }) => {
       success: true,
       data: history
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching history:', error);
 
     if (error instanceof z.ZodError) {
@@ -47,8 +47,9 @@ export const GET = withAuth(async (req, { userId }) => {
       );
     }
 
+    const message = error instanceof Error ? error.message : 'Erro inesperado'
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: message },
       { status: 500 }
     );
   }

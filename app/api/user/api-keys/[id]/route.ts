@@ -28,10 +28,11 @@ export const DELETE = withAuth(async (req, { userId }) => {
       success: true,
       message: 'API key deletada com sucesso'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting API key:', error);
+    const message = error instanceof Error ? error.message : 'Erro inesperado'
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: message },
       { status: 500 }
     );
   }

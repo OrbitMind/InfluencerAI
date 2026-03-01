@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Senha redefinida com sucesso!'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Reset password error:', error);
     return NextResponse.json(
       { success: false, error: 'Erro ao redefinir senha' },

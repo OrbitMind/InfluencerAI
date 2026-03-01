@@ -4,6 +4,7 @@ import { withCredits } from '@/lib/utils/billing-middleware'
 import { MotionService } from '@/lib/services/motion/motion.service'
 import { ApiKeyService } from '@/lib/services/api-key/api-key.service'
 import { motionGenerationSchema } from '@/lib/validations/motion'
+import type { MotionModelId } from '@/lib/types/motion'
 
 const motionService = MotionService.getInstance()
 const apiKeyService = new ApiKeyService()
@@ -21,7 +22,10 @@ export const POST = withCredits('motion', async (req, { userId }) => {
       )
     }
 
-    const result = await motionService.generateMotion(replicateKey, userId, validated)
+    const result = await motionService.generateMotion(replicateKey, userId, {
+      ...validated,
+      modelId: validated.modelId as MotionModelId | undefined,
+    })
     return NextResponse.json({ success: true, data: result })
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {

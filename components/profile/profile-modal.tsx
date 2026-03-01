@@ -123,9 +123,9 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
               <div className="flex items-center gap-2">
                 <Input value={profile?.email ?? ""} readOnly disabled className="bg-muted/50" />
                 {profile?.emailVerified ? (
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" title="E-mail verificado" />
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" aria-label="E-mail verificado" />
                 ) : (
-                  <XCircle className="h-4 w-4 shrink-0 text-muted-foreground" title="E-mail não verificado" />
+                  <XCircle className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="E-mail não verificado" />
                 )}
               </div>
               <p className="text-xs text-muted-foreground">

@@ -43,18 +43,20 @@ async function handler(req: NextRequest, context: { userId: string }) {
       width: result.width,
       height: result.height,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Trim Video Error]:', error)
 
-    if (error.name === 'ZodError') {
+    if (error instanceof Error && error.name === 'ZodError') {
+      const zodErr = error as { errors?: unknown }
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        { error: 'Validation error', details: zodErr.errors },
         { status: 400 }
       )
     }
 
+    const message = error instanceof Error ? error.message : 'Failed to trim video'
     return NextResponse.json(
-      { error: error.message || 'Failed to trim video' },
+      { error: message },
       { status: 500 }
     )
   }

@@ -24,10 +24,11 @@ export const GET = withAuth(async (req, { userId }) => {
       success: true,
       data: user
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching profile:', error);
+    const message = error instanceof Error ? error.message : 'Erro inesperado'
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: message },
       { status: 500 }
     );
   }
@@ -53,7 +54,7 @@ export const PATCH = withAuth(async (req, { userId }) => {
       success: true,
       data: user
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating profile:', error);
 
     if (error instanceof z.ZodError) {
@@ -63,8 +64,9 @@ export const PATCH = withAuth(async (req, { userId }) => {
       );
     }
 
+    const message = error instanceof Error ? error.message : 'Erro inesperado'
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: message },
       { status: 500 }
     );
   }

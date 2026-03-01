@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Se o email existir, você receberá um link de recuperação.'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Forgot password error:', error);
     return NextResponse.json(
       { success: false, error: 'Erro ao processar solicitação' },

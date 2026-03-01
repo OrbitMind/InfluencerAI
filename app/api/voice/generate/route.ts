@@ -6,7 +6,7 @@ import { VoiceService } from '@/lib/services/voice/voice.service';
 import { withAuth } from '@/lib/utils/auth';
 import { generateSpeechSchema } from '@/lib/validations/voice';
 import type { VoiceSettings } from '@/lib/types/voice';
-import type { Prisma } from '@prisma/client';
+import { toJsonValue } from '@/lib/utils/prisma-helpers';
 
 const apiKeyService = new ApiKeyService();
 const personaService = new PersonaService();
@@ -52,10 +52,10 @@ export const POST = withAuth(async (req, { userId }) => {
       type: 'generated_audio',
       url: result.audioUrl,
       publicId: result.publicId,
-      metadata: {
+      metadata: toJsonValue({
         voiceId: persona.voiceId,
         text: validated.text,
-      } as unknown as Prisma.InputJsonValue,
+      }),
     });
 
     return NextResponse.json({ success: true, data: result });

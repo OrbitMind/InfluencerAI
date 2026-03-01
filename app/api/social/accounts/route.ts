@@ -23,9 +23,10 @@ async function handler(req: NextRequest, context: { userId: string }) {
     }))
 
     return NextResponse.json({ success: true, data: sanitized })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to list accounts'
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to list accounts' },
+      { success: false, error: message },
       { status: 500 }
     )
   }

@@ -34,12 +34,13 @@ export async function POST(req: NextRequest) {
       result,
       message: `Processed ${result.processed} posts: ${result.published} published, ${result.failed} failed`,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Cron job error:', error)
+    const message = error instanceof Error ? error.message : 'Cron job failed'
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Cron job failed',
+        error: message,
       },
       { status: 500 }
     )

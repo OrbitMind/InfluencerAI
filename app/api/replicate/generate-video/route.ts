@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createLogger } from '@/lib/utils/logger';
 import Replicate from 'replicate';
 import { ApiKeyService } from '@/lib/services/api-key/api-key.service';
 import { GenerationService } from '@/lib/services/generation/generation.service';
 import { CameraControlService } from '@/lib/services/camera-control/camera-control.service';
 import { withCredits } from '@/lib/utils/billing-middleware';
+import type { CameraMovement } from '@/lib/types/camera-control';
+
+const logger = createLogger('generate-video');
 
 const apiKeyService = new ApiKeyService();
 const generationService = new GenerationService();
@@ -63,7 +67,7 @@ export const POST = withCredits('video', async (req, { userId }) => {
     if (validated.cameraMovement) {
       input = cameraControlService.buildCameraInput(
         validated.modelId,
-        validated.cameraMovement as import('@/lib/types/camera-control').CameraMovement,
+        validated.cameraMovement as CameraMovement,
         input
       );
     }
@@ -78,7 +82,7 @@ export const POST = withCredits('video', async (req, { userId }) => {
     const videoUrl = Array.isArray(output) ? output[0] : output;
 
     if (!videoUrl || typeof videoUrl !== 'string') {
-      console.error('Replicate output inesperado:', output);
+      logger.error('Replicate output inesperado:', { output });
       throw new Error('Output inválido do Replicate');
     }
 
@@ -104,8 +108,8 @@ export const POST = withCredits('video', async (req, { userId }) => {
         createdAt: generation.createdAt
       }
     });
-  } catch (error: any) {
-    console.error('Video generation error:', error);
+  } catch (error: unknown) {
+    logger.error('Video generation error:', { error });
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -114,8 +118,9 @@ export const POST = withCredits('video', async (req, { userId }) => {
       );
     }
 
+    const message = error instanceof Error ? error.message : 'Falha ao gerar vídeo'
     return NextResponse.json(
-      { success: false, error: error.message || 'Falha ao gerar vídeo' },
+      { success: false, error: message },
       { status: 500 }
     );
   }

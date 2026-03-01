@@ -38,10 +38,11 @@ async function handler(req: NextRequest, context: { userId: string }) {
       success: true,
       ...result,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('List scheduled error:', error)
+    const message = error instanceof Error ? error.message : 'Failed to list scheduled posts'
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to list scheduled posts' },
+      { success: false, error: message },
       { status: 500 }
     )
   }
