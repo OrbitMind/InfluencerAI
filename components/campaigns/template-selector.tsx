@@ -48,7 +48,7 @@ export function TemplateSelector({ selectedId, onSelect, disabled }: TemplateSel
       <div className="flex flex-wrap gap-2">
         <Badge
           variant={activeCategory === null ? "default" : "outline"}
-          className="cursor-pointer"
+          className="cursor-pointer hover:border-primary hover:text-primary transition-colors"
           onClick={() => setActiveCategory(null)}
         >
           Todos
@@ -57,7 +57,7 @@ export function TemplateSelector({ selectedId, onSelect, disabled }: TemplateSel
           <Badge
             key={cat.value}
             variant={activeCategory === cat.value ? "default" : "outline"}
-            className="cursor-pointer"
+            className="cursor-pointer hover:border-primary hover:text-primary transition-colors"
             onClick={() => setActiveCategory(cat.value)}
           >
             {cat.label}
@@ -70,8 +70,8 @@ export function TemplateSelector({ selectedId, onSelect, disabled }: TemplateSel
           <Card
             key={template.id}
             className={cn(
-              "cursor-pointer transition-all hover:shadow-md",
-              selectedId === template.id && "ring-2 ring-primary",
+              "cursor-pointer transition-all hover:shadow-md hover:border-primary",
+              selectedId === template.id && "ring-2 ring-primary border-primary",
               disabled && "opacity-50 pointer-events-none"
             )}
             onClick={() => onSelect(template)}

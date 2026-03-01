@@ -51,20 +51,20 @@ export function CaptionStyleSelector({
       {/* Preset Grid */}
       <div>
         <Label className="text-sm font-medium mb-2 block">Estilo de Legenda</Label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-4">
           {CAPTION_PRESETS.map((preset) => (
             <Card
               key={preset.id}
               className={cn(
-                "cursor-pointer transition-all hover:shadow-md",
-                presetId === preset.id && "ring-2 ring-primary"
+                "cursor-pointer transition-all hover:shadow-md hover:border-primary",
+                presetId === preset.id && "ring-2 ring-primary border-primary"
               )}
               onClick={() => onPresetChange(preset.id)}
             >
-              <CardContent className="p-3 text-center">
-                <div className="text-2xl mb-1">{preset.preview}</div>
+              <CardContent className="p-4 text-center">
+                <div className="text-3xl mb-2">{preset.preview}</div>
                 <p className="font-medium text-sm">{preset.name}</p>
-                <p className="text-xs text-muted-foreground">{preset.description}</p>
+                <p className="text-xs text-muted-foreground mt-1">{preset.description}</p>
               </CardContent>
             </Card>
           ))}

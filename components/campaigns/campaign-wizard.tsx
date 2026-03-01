@@ -269,7 +269,7 @@ export function CampaignWizard({ initialPersonaId, initialTemplateId }: Campaign
 
           {/* Step 4: Captions */}
           {step === 4 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-6">
               <CaptionStyleSelector
                 presetId={captionPresetId}
                 customStyle={captionCustomStyle}
@@ -291,18 +291,18 @@ export function CampaignWizard({ initialPersonaId, initialTemplateId }: Campaign
 
       {/* Navigation */}
       <div className="flex justify-between">
-        <Button variant="outline" onClick={handleBack} disabled={step === 0}>
+        <Button variant="outline" className="cursor-pointer" onClick={handleBack} disabled={step === 0}>
           <ChevronLeft className="h-4 w-4 mr-2" />
           Voltar
         </Button>
 
         {step < STEPS.length - 1 ? (
-          <Button onClick={handleNext} disabled={!canAdvance()}>
+          <Button className="cursor-pointer" onClick={handleNext} disabled={!canAdvance()}>
             Avançar
             <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         ) : (
-          <Button onClick={handleSubmit} disabled={!canAdvance() || isSubmitting}>
+          <Button className="cursor-pointer" onClick={handleSubmit} disabled={!canAdvance() || isSubmitting}>
             {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Criar Campanha
           </Button>

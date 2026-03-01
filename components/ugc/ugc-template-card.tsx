@@ -36,10 +36,10 @@ export function UGCTemplateCard({ template, onSelect }: UGCTemplateCardProps) {
         <CardDescription className="text-sm">{template.description}</CardDescription>
       </CardContent>
       <CardFooter>
-        <Button variant="outline" size="sm" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+        <div className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-md border border-border text-muted-foreground group-hover:bg-primary group-hover:text-black group-hover:border-primary transition-colors">
           Usar Template
-          <ArrowRight className="h-3.5 w-3.5 ml-2" />
-        </Button>
+          <ArrowRight className="h-3.5 w-3.5" />
+        </div>
       </CardFooter>
     </Card>
   )
