@@ -8,7 +8,7 @@ import type {
   ConsistentImageParams,
   ConsistentImageResult,
 } from '@/lib/types/face-consistency';
-import type { Prisma } from '@prisma/client';
+import { toJsonValue } from '@/lib/utils/prisma-helpers';
 
 export class FaceConsistencyService {
   private static instance: FaceConsistencyService;
@@ -87,11 +87,11 @@ export class FaceConsistencyService {
       publicId: generation.publicId,
       prompt: params.prompt,
       modelId: strategy.modelId,
-      metadata: {
+      metadata: toJsonValue({
         strategy: params.strategy,
         strength: params.strength,
         faceConsistency: true,
-      } as unknown as Prisma.InputJsonValue,
+      }),
     });
 
     return {

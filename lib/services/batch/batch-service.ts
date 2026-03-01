@@ -190,8 +190,8 @@ export class BatchService {
         where: { id: batchId },
         data: {
           status: finalStatus,
-          results,
-          errorLog: errors,
+          results: results as unknown as import('@prisma/client').Prisma.InputJsonValue,
+          errorLog: errors as unknown as import('@prisma/client').Prisma.InputJsonValue,
           completedAt: new Date(),
         },
       })

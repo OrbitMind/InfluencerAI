@@ -310,7 +310,7 @@ export class SocialPublishService {
         'Content-Type': 'video/mp4',
         'Content-Length': videoBuffer.length.toString(),
       },
-      body: videoBuffer,
+      body: videoBuffer as unknown as BodyInit,
     })
 
     if (!uploadResponse.ok) {
@@ -366,7 +366,7 @@ export class SocialPublishService {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await publishFn()
-      } catch (error: any) {
+      } catch (error: unknown) {
         const isRetryable = this.isRetryableError(error)
         const isLastAttempt = attempt === maxRetries
 

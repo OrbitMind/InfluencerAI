@@ -1,5 +1,8 @@
+import { createLogger } from '@/lib/utils/logger';
 import crypto from 'crypto';
 import { IEncryptionService, EncryptedData } from '../interfaces/encryption.interface';
+
+const logger = createLogger('AESEncryptionService');
 
 const ALGORITHM = 'aes-256-gcm';
 const KEY_LENGTH = 32; // 256 bits
@@ -78,7 +81,7 @@ export class AESEncryptionService implements IEncryptionService {
 
       return decrypted.toString('utf8');
     } catch (error) {
-      console.error('Decryption failed:', error);
+      logger.error('Decryption failed:', { error });
       throw new Error('Falha ao descriptografar dados - dados corrompidos ou chave inválida');
     }
   }

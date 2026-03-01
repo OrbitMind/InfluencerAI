@@ -34,7 +34,7 @@ export class ProductAssetService {
       input: { image: asset.imageUrl },
     })
 
-    const bgRemovedUrl = Array.isArray(output) ? output[0] : (output as string)
+    const bgRemovedUrl = Array.isArray(output) ? (output[0] as unknown as string) : (output as unknown as string)
     if (!bgRemovedUrl || typeof bgRemovedUrl !== 'string') {
       throw new Error('Falha ao remover background via Replicate')
     }

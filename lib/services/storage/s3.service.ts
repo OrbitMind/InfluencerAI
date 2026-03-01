@@ -1,5 +1,8 @@
+import { createLogger } from '@/lib/utils/logger';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { IStorageService, UploadParams, StorageResult } from '../interfaces/storage.interface';
+
+const logger = createLogger('S3StorageService');
 
 /**
  * Implementação do serviço de storage usando AWS S3
@@ -66,7 +69,7 @@ export class S3StorageService implements IStorageService {
         duration: undefined
       };
     } catch (error) {
-      console.error('S3 upload failed:', error);
+      logger.error('S3 upload failed:', { error });
       throw new Error('Falha ao fazer upload para S3');
     }
   }
@@ -78,7 +81,7 @@ export class S3StorageService implements IStorageService {
         Key: publicId
       }));
     } catch (error) {
-      console.error('S3 delete failed:', error);
+      logger.error('S3 delete failed:', { error });
       throw new Error('Falha ao deletar do S3');
     }
   }

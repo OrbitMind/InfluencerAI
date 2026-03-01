@@ -1,3 +1,4 @@
+import { createLogger } from '@/lib/utils/logger'
 import { prisma } from '@/lib/db'
 import type {
   CreateExperimentParams,
@@ -9,6 +10,8 @@ import type { Experiment, ExperimentVariant } from '@prisma/client'
 // ============================================
 // EXPERIMENT SERVICE (Sprint 9)
 // ============================================
+
+const logger = createLogger('ExperimentService')
 
 export class ExperimentService {
   private static instance: ExperimentService
@@ -58,7 +61,7 @@ export class ExperimentService {
         variants: {
           create: variants.map((variant) => ({
             label: variant.label,
-            config: variant.config,
+            config: variant.config as import('@prisma/client').Prisma.InputJsonValue,
             isWinner: false,
           })),
         },
@@ -68,7 +71,7 @@ export class ExperimentService {
       },
     })
 
-    return experiment
+    return experiment as unknown as ExperimentWithVariants
   }
 
   // ============================================
@@ -104,7 +107,7 @@ export class ExperimentService {
             personaId: experiment.personaId,
             templateId: config.templateId as string || '',
             name: `${experiment.name} - ${variant.label}`,
-            variables: config.variables as Record<string, unknown> || {},
+            variables: (config.variables ?? {}) as import('@prisma/client').Prisma.InputJsonValue,
             status: 'draft',
           },
         })
@@ -115,7 +118,7 @@ export class ExperimentService {
           data: { campaignId: campaign.id },
         })
       } catch (error) {
-        console.error(`[ExperimentService] Failed to create campaign for variant ${variant.id}:`, error)
+        logger.error(`[ExperimentService] Failed to create campaign for variant ${variant.id}:`, { error })
       }
     }
 

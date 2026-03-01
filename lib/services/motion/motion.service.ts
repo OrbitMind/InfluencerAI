@@ -60,7 +60,7 @@ export class MotionService {
       { input }
     )
 
-    const videoUrl = Array.isArray(output) ? output[0] : (output as string)
+    const videoUrl = Array.isArray(output) ? (output[0] as unknown as string) : (output as unknown as string)
     if (!videoUrl || typeof videoUrl !== 'string') {
       throw new Error('Output inválido do modelo de animação')
     }

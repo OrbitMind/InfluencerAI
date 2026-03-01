@@ -91,7 +91,7 @@ export interface SuggestedTime {
 // ============================================
 
 export interface PlatformConfig {
-  id: 'instagram' | 'tiktok' | 'youtube'
+  id: 'instagram' | 'tiktok' | 'youtube' | 'whatsapp'
   name: string
   icon: string
   types: string[]

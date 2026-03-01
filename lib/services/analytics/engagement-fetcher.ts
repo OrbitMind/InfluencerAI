@@ -1,6 +1,9 @@
+import { createLogger } from '@/lib/utils/logger'
 import { prisma } from '@/lib/db'
 import { socialAuthService } from '@/lib/services/social/social-auth-service'
 import type { EngagementData } from '@/lib/types/analytics'
+
+const logger = createLogger('EngagementFetcherService')
 
 // ============================================
 // ENGAGEMENT FETCHER SERVICE (Sprint 9)
@@ -58,7 +61,7 @@ export class EngagementFetcherService {
           updated++
         }
       } catch (error) {
-        console.error(`[EngagementFetcher] Failed for post ${post.id}:`, error)
+        logger.error(`[EngagementFetcher] Failed for post ${post.id}:`, { error })
         failed++
       }
 
@@ -119,7 +122,7 @@ export class EngagementFetcherService {
       )
 
       if (!basicResponse.ok) {
-        console.error('Instagram basic fetch failed:', await basicResponse.text())
+        logger.error('Instagram basic fetch failed:', { responseText: await basicResponse.text() })
         return null
       }
 
@@ -152,7 +155,7 @@ export class EngagementFetcherService {
         impressions,
       }
     } catch (error) {
-      console.error('[EngagementFetcher] Instagram fetch error:', error)
+      logger.error('[EngagementFetcher] Instagram fetch error:', { error })
       return null
     }
   }
@@ -167,7 +170,7 @@ export class EngagementFetcherService {
       )
 
       if (!response.ok) {
-        console.error('YouTube stats fetch failed:', await response.text())
+        logger.error('YouTube stats fetch failed:', { responseText: await response.text() })
         return null
       }
 
@@ -185,7 +188,7 @@ export class EngagementFetcherService {
         views: parseInt(stats.viewCount || '0'),
       }
     } catch (error) {
-      console.error('[EngagementFetcher] YouTube fetch error:', error)
+      logger.error('[EngagementFetcher] YouTube fetch error:', { error })
       return null
     }
   }

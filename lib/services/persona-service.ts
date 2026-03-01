@@ -1,3 +1,4 @@
+import { createLogger } from '@/lib/utils/logger';
 import { PersonaRepository } from '@/lib/repositories/persona.repository';
 import { PersonaAssetRepository } from '@/lib/repositories/persona-asset.repository';
 import { SlugService } from './slug-service';
@@ -6,6 +7,9 @@ import { getStorageService } from './storage/factory';
 import type { CreatePersonaDTO, UpdatePersonaDTO, PersonaFilters, PersonaAttributes } from '@/lib/types/persona';
 import type { PersonaVoiceConfig } from '@/lib/types/voice';
 import { Prisma } from '@prisma/client';
+import { toJsonValue } from '@/lib/utils/prisma-helpers';
+
+const logger = createLogger('PersonaService');
 
 const VISUAL_FIELDS: (keyof PersonaAttributes)[] = [
   'name', 'bio', 'gender', 'ageRange', 'ethnicity', 'bodyType',
@@ -19,22 +23,22 @@ export class PersonaService {
   private assetRepository = new PersonaAssetRepository();
 
   async createPersona(userId: string, data: CreatePersonaDTO) {
-    console.log('🆕 [PersonaService.createPersona] Iniciando criação');
-    console.log('🆕 [PersonaService.createPersona] userId:', userId);
-    console.log('🆕 [PersonaService.createPersona] data:', data);
+    logger.info('[PersonaService.createPersona] Iniciando criação');
+    logger.info('[PersonaService.createPersona] userId:', { userId });
+    logger.info('[PersonaService.createPersona] data:', { data });
 
     const slug = await SlugService.generateUniqueSlug(
       data.name,
       userId,
       (s, u) => this.repository.slugExists(s, u)
     );
-    console.log('🆕 [PersonaService.createPersona] slug gerado:', slug);
+    logger.info('[PersonaService.createPersona] slug gerado:', { slug });
 
     const basePrompt = PromptBuilderService.buildBasePrompt(data);
-    console.log('🆕 [PersonaService.createPersona] basePrompt gerado');
+    logger.info('[PersonaService.createPersona] basePrompt gerado');
 
     const persona = await this.repository.create(userId, { ...data, slug, basePrompt });
-    console.log('✅ [PersonaService.createPersona] Persona criada no DB:', {
+    logger.info('[PersonaService.createPersona] Persona criada no DB:', {
       id: persona.id,
       name: persona.name,
       userId: persona.userId
@@ -116,12 +120,12 @@ export class PersonaService {
   }
 
   async listPersonas(userId: string, filters?: PersonaFilters) {
-    console.log('📚 [PersonaService.listPersonas] Iniciando listagem');
-    console.log('📚 [PersonaService.listPersonas] userId:', userId);
-    console.log('📚 [PersonaService.listPersonas] filters:', filters);
+    logger.info('[PersonaService.listPersonas] Iniciando listagem');
+    logger.info('[PersonaService.listPersonas] userId:', { userId });
+    logger.info('[PersonaService.listPersonas] filters:', { filters });
 
     const { personas, total } = await this.repository.findAllByUser(userId, filters);
-    console.log('📚 [PersonaService.listPersonas] Resultado do repository:', {
+    logger.info('[PersonaService.listPersonas] Resultado do repository:', {
       total,
       personasCount: personas.length,
       personasIds: personas.map(p => p.id)
@@ -140,7 +144,7 @@ export class PersonaService {
       },
     };
 
-    console.log('✅ [PersonaService.listPersonas] Retornando resultado:', {
+    logger.info('[PersonaService.listPersonas] Retornando resultado:', {
       personasCount: result.personas.length,
       pagination: result.pagination
     });
@@ -220,7 +224,7 @@ export class PersonaService {
       voiceId: config.voiceId,
       voiceName: config.voiceName,
       voicePreviewUrl: config.voicePreviewUrl,
-      voiceSettings: config.voiceSettings as unknown as Prisma.InputJsonValue,
+      voiceSettings: toJsonValue(config.voiceSettings as unknown as Record<string, unknown>),
     });
   }
 

@@ -271,20 +271,21 @@ export class SchedulerService {
         })
 
         result.published++
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Update post with failure
+        const message = error instanceof Error ? error.message : 'Unknown error'
         await prisma.scheduledPost.update({
           where: { id: post.id },
           data: {
             status: 'failed',
-            errorMessage: error.message || 'Unknown error',
+            errorMessage: message,
           },
         })
 
         result.failed++
         result.errors?.push({
           postId: post.id,
-          error: error.message || 'Unknown error',
+          error: message,
         })
       }
     }

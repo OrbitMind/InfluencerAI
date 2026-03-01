@@ -17,6 +17,7 @@ import type {
 import type { VoiceSettings } from '@/lib/types/voice';
 import type { CameraMovement } from '@/lib/types/camera-control';
 import type { Prisma } from '@prisma/client';
+import { toJsonValue } from '@/lib/utils/prisma-helpers';
 
 export class GenerationPipelineService {
   private static instance: GenerationPipelineService;
@@ -37,13 +38,8 @@ export class GenerationPipelineService {
     return GenerationPipelineService.instance;
   }
 
-  async generatePersonaImage(
-    userId: string,
-    replicateKey: string,
-    params: PipelinePersonaImageParams
-  ): Promise<PipelineResult> {
-    const persona = await this.personaService.getPersona(userId, params.personaId);
-    const personaAttrs = {
+  private buildPersonaAttrs(persona: Awaited<ReturnType<PersonaService['getPersona']>>) {
+    return {
       name: persona.name ?? undefined,
       bio: persona.bio ?? undefined,
       gender: persona.gender ?? undefined,
@@ -59,6 +55,15 @@ export class GenerationPipelineService {
       contentTone: persona.contentTone ?? undefined,
       language: persona.language ?? undefined,
     };
+  }
+
+  async generatePersonaImage(
+    userId: string,
+    replicateKey: string,
+    params: PipelinePersonaImageParams
+  ): Promise<PipelineResult> {
+    const persona = await this.personaService.getPersona(userId, params.personaId);
+    const personaAttrs = this.buildPersonaAttrs(persona);
     const basePrompt = persona.basePrompt || PromptBuilderService.buildBasePrompt(personaAttrs);
     const fullPrompt = PromptBuilderService.buildImagePrompt(basePrompt, params.promptContext);
 
@@ -134,26 +139,12 @@ export class GenerationPipelineService {
   async generatePersonaVideo(
     userId: string,
     replicateKey: string,
-    params: PipelinePersonaVideoParams
+    params: PipelinePersonaVideoParams,
+    preloadedPersona?: Awaited<ReturnType<PersonaService['getPersona']>>
   ): Promise<PipelineResult> {
-    const persona = await this.personaService.getPersona(userId, params.personaId);
-    const videoPersonaAttrs = {
-      name: persona.name ?? undefined,
-      bio: persona.bio ?? undefined,
-      gender: persona.gender ?? undefined,
-      ageRange: persona.ageRange ?? undefined,
-      ethnicity: persona.ethnicity ?? undefined,
-      bodyType: persona.bodyType ?? undefined,
-      hairColor: persona.hairColor ?? undefined,
-      hairStyle: persona.hairStyle ?? undefined,
-      eyeColor: persona.eyeColor ?? undefined,
-      distinctiveFeatures: persona.distinctiveFeatures ?? undefined,
-      styleDescription: persona.styleDescription ?? undefined,
-      niche: persona.niche ?? undefined,
-      contentTone: persona.contentTone ?? undefined,
-      language: persona.language ?? undefined,
-    };
-    const basePrompt = persona.basePrompt || PromptBuilderService.buildBasePrompt(videoPersonaAttrs);
+    const persona = preloadedPersona ?? await this.personaService.getPersona(userId, params.personaId);
+    const personaAttrs = this.buildPersonaAttrs(persona);
+    const basePrompt = persona.basePrompt || PromptBuilderService.buildBasePrompt(personaAttrs);
     const fullPrompt = PromptBuilderService.buildVideoPrompt(basePrompt, params.promptContext);
 
     const replicate = new Replicate({ auth: replicateKey, useFileOutput: false });
@@ -211,12 +202,12 @@ export class GenerationPipelineService {
     replicateKey: string,
     params: PipelinePersonaVideoWithVoiceParams
   ): Promise<PipelineResult> {
-    const videoResult = await this.generatePersonaVideo(userId, replicateKey, params);
-
     const persona = await this.personaService.getPersona(userId, params.personaId);
     if (!persona.voiceId) {
       throw new Error('Persona não tem voz configurada');
     }
+
+    const videoResult = await this.generatePersonaVideo(userId, replicateKey, params, persona);
 
     const elevenLabsKey = await this.apiKeyService.getApiKey(userId, 'elevenlabs');
     if (!elevenLabsKey) {
@@ -245,11 +236,11 @@ export class GenerationPipelineService {
       type: 'generated_audio',
       url: audioResult.audioUrl,
       publicId: audioResult.publicId,
-      metadata: {
+      metadata: toJsonValue({
         voiceId: persona.voiceId,
         text: params.narrationText,
         associatedVideoId: videoResult.generationId,
-      } as unknown as Prisma.InputJsonValue,
+      }),
     });
 
     return {
@@ -276,7 +267,7 @@ export class GenerationPipelineService {
       outputUrl: result.outputUrl,
       thumbnailUrl: result.thumbnailUrl,
       personaId: params.personaId,
-      metadata: { modelId: result.modelId, animationStyle: result.animationStyle },
+      metadata: { modelId: result.modelId, animationStyle: result.animationStyle, prompt: result.animationStyle },
     };
   }
 
@@ -321,11 +312,11 @@ export class GenerationPipelineService {
       type: 'generated_video',
       url: generation.outputUrl,
       publicId: generation.publicId,
-      metadata: {
+      metadata: toJsonValue({
         lipSync: true,
         model,
         audioUrl: params.audioUrl,
-      } as unknown as Prisma.InputJsonValue,
+      }),
     });
 
     return {

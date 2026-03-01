@@ -1,4 +1,6 @@
+import { createLogger } from '@/lib/utils/logger'
 import { prisma } from '@/lib/db'
+import type { Prisma } from '@prisma/client'
 import type {
   TrackEventParams,
   DashboardMetrics,
@@ -11,6 +13,8 @@ import { CreditService } from '@/lib/services/billing/credit.service'
 // ============================================
 // ANALYTICS SERVICE (Sprint 9)
 // ============================================
+
+const logger = createLogger('AnalyticsService')
 
 export class AnalyticsService {
   private static instance: AnalyticsService
@@ -41,7 +45,7 @@ export class AnalyticsService {
         data: {
           userId: params.userId,
           eventType: params.eventType,
-          eventData: params.eventData || null,
+          eventData: params.eventData ? (params.eventData as unknown as Prisma.InputJsonValue) : undefined,
           personaId: params.personaId || null,
           campaignId: params.campaignId || null,
           platform: params.platform || null,
@@ -51,7 +55,7 @@ export class AnalyticsService {
       })
     } catch (error) {
       // Fire-and-forget: log but don't throw
-      console.error('[AnalyticsService] Failed to track event:', error)
+      logger.error('[AnalyticsService] Failed to track event:', { error })
     }
   }
 

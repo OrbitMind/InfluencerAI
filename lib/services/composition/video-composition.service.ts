@@ -1,3 +1,4 @@
+import { createLogger } from '@/lib/utils/logger';
 import { execSync, execFile } from 'child_process';
 import { writeFile, unlink, mkdtemp } from 'fs/promises';
 import { tmpdir } from 'os';
@@ -9,6 +10,8 @@ import type {
   TrimVideoParams,
   CompositionResult,
 } from '@/lib/types/video-composition';
+
+const logger = createLogger('VideoCompositionService');
 
 export class VideoCompositionService {
   private static instance: VideoCompositionService;
@@ -89,7 +92,7 @@ export class VideoCompositionService {
         publicId: result.public_id,
       };
     } catch (error) {
-      console.error('[VideoCompositionService] ffmpeg composition failed:', error);
+      logger.error('[VideoCompositionService] ffmpeg composition failed:', { error });
       return null;
     } finally {
       await this.cleanupTemp(tempFiles);
@@ -204,7 +207,7 @@ export class VideoCompositionService {
         height: result.height,
       };
     } catch (error) {
-      console.error('[VideoCompositionService] concatenation failed:', error);
+      logger.error('[VideoCompositionService] concatenation failed:', { error });
       return null;
     } finally {
       await this.cleanupTemp(tempFiles);
@@ -286,7 +289,7 @@ export class VideoCompositionService {
         height: result.height,
       };
     } catch (error) {
-      console.error('[VideoCompositionService] audio merge failed:', error);
+      logger.error('[VideoCompositionService] audio merge failed:', { error });
       return null;
     } finally {
       await this.cleanupTemp(tempFiles);
@@ -346,7 +349,7 @@ export class VideoCompositionService {
         height: result.height,
       };
     } catch (error) {
-      console.error('[VideoCompositionService] trim failed:', error);
+      logger.error('[VideoCompositionService] trim failed:', { error });
       return null;
     } finally {
       await this.cleanupTemp(tempFiles);

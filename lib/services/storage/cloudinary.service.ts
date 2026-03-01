@@ -1,5 +1,8 @@
+import { createLogger } from '@/lib/utils/logger';
 import { v2 as cloudinary } from 'cloudinary';
 import { IStorageService, UploadParams, StorageResult } from '../interfaces/storage.interface';
+
+const logger = createLogger('CloudinaryStorageService');
 
 /**
  * Implementação do serviço de storage usando Cloudinary
@@ -75,7 +78,7 @@ export class CloudinaryStorageService implements IStorageService {
         thumbnailUrl
       };
     } catch (error) {
-      console.error('Cloudinary upload failed:', error);
+      logger.error('Cloudinary upload failed:', { error });
       throw new Error('Falha ao fazer upload para Cloudinary');
     }
   }
@@ -86,7 +89,7 @@ export class CloudinaryStorageService implements IStorageService {
         resource_type: 'auto'
       });
     } catch (error) {
-      console.error('Cloudinary delete failed:', error);
+      logger.error('Cloudinary delete failed:', { error });
       throw new Error('Falha ao deletar do Cloudinary');
     }
   }
