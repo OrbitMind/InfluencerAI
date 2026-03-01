@@ -12,7 +12,7 @@ import { CampaignOutputs } from "@/components/campaigns/campaign-outputs"
 import { CampaignExecutionLog } from "@/components/campaigns/campaign-execution-log"
 import { useCampaignExecution } from "@/lib/hooks/use-campaign-execution"
 import { campaignApiService } from "@/lib/services/CampaignApiService"
-import type { CampaignData, ExecutionStep, ExecutionLogEntry } from "@/lib/types/campaign"
+import type { CampaignData, ExecutionStep, ExecutionLogEntry, ExecuteCampaignOptions } from "@/lib/types/campaign"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,8 +49,8 @@ export default function CampaignDetailPage() {
     loadCampaign()
   }, [campaignId])
 
-  const handleExecute = async (steps: ExecutionStep[]) => {
-    const result = await execute(campaignId, { steps })
+  const handleExecute = async (steps: ExecutionStep[], modelOptions?: Omit<ExecuteCampaignOptions, 'steps'>) => {
+    const result = await execute(campaignId, { steps, ...modelOptions })
     if (result) {
       setCampaign(result)
       toast.success("Campanha executada com sucesso!")
@@ -123,7 +123,7 @@ export default function CampaignDetailPage() {
           <CampaignExecutionPanel
             campaign={campaign}
             isExecuting={isExecuting}
-            onExecute={handleExecute}
+            onExecute={(steps, options) => handleExecute(steps, options)}
           />
 
           <Card>
