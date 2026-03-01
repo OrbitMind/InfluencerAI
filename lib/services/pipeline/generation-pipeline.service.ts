@@ -6,6 +6,7 @@ import { VoiceService } from '@/lib/services/voice/voice.service';
 import { PromptBuilderService } from '@/lib/services/prompt-builder-service';
 import { ApiKeyService } from '@/lib/services/api-key/api-key.service';
 import { LipSyncService } from '@/lib/services/lip-sync/lip-sync.service';
+import { CameraControlService } from '@/lib/services/camera-control/camera-control.service';
 import type {
   PipelinePersonaImageParams,
   PipelinePersonaVideoParams,
@@ -14,6 +15,7 @@ import type {
   PipelineResult,
 } from '@/lib/types/pipeline';
 import type { VoiceSettings } from '@/lib/types/voice';
+import type { CameraMovement } from '@/lib/types/camera-control';
 import type { Prisma } from '@prisma/client';
 
 export class GenerationPipelineService {
@@ -24,6 +26,7 @@ export class GenerationPipelineService {
   private voiceService = VoiceService.getInstance();
   private apiKeyService = new ApiKeyService();
   private lipSyncService = LipSyncService.getInstance();
+  private cameraControlService = CameraControlService.getInstance();
 
   private constructor() {}
 
@@ -154,11 +157,17 @@ export class GenerationPipelineService {
     const fullPrompt = PromptBuilderService.buildVideoPrompt(basePrompt, params.promptContext);
 
     const replicate = new Replicate({ auth: replicateKey, useFileOutput: false });
-    const input: Record<string, unknown> = { prompt: fullPrompt };
+    let input: Record<string, unknown> = { prompt: fullPrompt };
 
     const sourceImage = params.sourceImageUrl || persona.referenceImageUrl;
     if (sourceImage) input.image = sourceImage;
     if (params.duration) input.duration = params.duration;
+
+    // Enriquecer com camera control se especificado
+    const cameraMovement = params.promptContext?.cameraMovement as CameraMovement | undefined;
+    if (cameraMovement) {
+      input = this.cameraControlService.buildCameraInput(params.modelId, cameraMovement, input);
+    }
 
     const output = await replicate.run(
       params.modelId as `${string}/${string}`,
@@ -251,6 +260,23 @@ export class GenerationPipelineService {
         voiceId: persona.voiceId,
         narrationText: params.narrationText,
       },
+    };
+  }
+
+  async generatePersonaMotionVideo(
+    userId: string,
+    replicateKey: string,
+    params: import('@/lib/types/motion').MotionParams
+  ): Promise<PipelineResult> {
+    const { MotionService } = await import('@/lib/services/motion/motion.service');
+    const motionService = MotionService.getInstance();
+    const result = await motionService.generateMotion(replicateKey, userId, params);
+    return {
+      generationId: result.generationId,
+      outputUrl: result.outputUrl,
+      thumbnailUrl: result.thumbnailUrl,
+      personaId: params.personaId,
+      metadata: { modelId: result.modelId, animationStyle: result.animationStyle },
     };
   }
 
