@@ -20,7 +20,7 @@ export const POST = withCredits('lip-sync', async (req, { userId }) => {
     const body = await req.json();
     const validated = schema.parse(body);
 
-    const replicateKey = await apiKeyService.getApiKey(userId, 'replicate');
+    const replicateKey = await apiKeyService.getApiKeyWithEnvFallback(userId, 'replicate');
     if (!replicateKey) {
       return NextResponse.json(
         {

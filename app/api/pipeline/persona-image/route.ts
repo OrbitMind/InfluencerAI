@@ -13,7 +13,7 @@ export const POST = withAuth(async (req, { userId }) => {
     const body = await req.json();
     const validated = pipelinePersonaImageSchema.parse(body);
 
-    const replicateKey = await apiKeyService.getApiKey(userId, 'replicate');
+    const replicateKey = await apiKeyService.getApiKeyWithEnvFallback(userId, 'replicate');
     if (!replicateKey) {
       return NextResponse.json(
         { success: false, error: 'API key do Replicate não configurada' },

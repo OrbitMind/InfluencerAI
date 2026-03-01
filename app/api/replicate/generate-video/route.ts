@@ -3,10 +3,12 @@ import { z } from 'zod';
 import Replicate from 'replicate';
 import { ApiKeyService } from '@/lib/services/api-key/api-key.service';
 import { GenerationService } from '@/lib/services/generation/generation.service';
+import { CameraControlService } from '@/lib/services/camera-control/camera-control.service';
 import { withCredits } from '@/lib/utils/billing-middleware';
 
 const apiKeyService = new ApiKeyService();
 const generationService = new GenerationService();
+const cameraControlService = CameraControlService.getInstance();
 
 /**
  * POST /api/replicate/generate-video
@@ -24,7 +26,8 @@ const schema = z.object({
   prompt: z.string().min(1, 'Prompt é obrigatório'),
   imageUrl: z.string().url().optional(),
   duration: z.number().optional(),
-  personaId: z.string().optional()
+  personaId: z.string().optional(),
+  cameraMovement: z.string().optional(),
 });
 
 export const POST = withCredits('video', async (req, { userId }) => {
@@ -33,7 +36,7 @@ export const POST = withCredits('video', async (req, { userId }) => {
     const validated = schema.parse(body);
 
     // 1. Buscar API key do Replicate (descriptografada)
-    const replicateKey = await apiKeyService.getApiKey(userId, 'replicate');
+    const replicateKey = await apiKeyService.getApiKeyWithEnvFallback(userId, 'replicate');
 
     if (!replicateKey) {
       return NextResponse.json(
@@ -49,12 +52,21 @@ export const POST = withCredits('video', async (req, { userId }) => {
     const replicate = new Replicate({ auth: replicateKey, useFileOutput: false });
 
     // 3. Construir input
-    const input: Record<string, unknown> = {
+    let input: Record<string, unknown> = {
       prompt: validated.prompt
     };
 
     if (validated.imageUrl) input.image = validated.imageUrl;
     if (validated.duration) input.duration = validated.duration;
+
+    // Aplicar camera control (nativo ou via prompt)
+    if (validated.cameraMovement) {
+      input = cameraControlService.buildCameraInput(
+        validated.modelId,
+        validated.cameraMovement as import('@/lib/types/camera-control').CameraMovement,
+        input
+      );
+    }
 
     // 4. Gerar vídeo
     const output = await replicate.run(

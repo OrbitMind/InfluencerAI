@@ -26,7 +26,7 @@ export const GET = withAuth(async (request, { userId }) => {
   const type = (searchParams.get("type") || "image") as 'image' | 'video'
   const query = searchParams.get("query") || ""
 
-  const apiKey = await apiKeyService.getApiKey(userId, 'replicate')
+  const apiKey = await apiKeyService.getApiKeyWithEnvFallback(userId, 'replicate')
 
   if (!apiKey) {
     return NextResponse.json(

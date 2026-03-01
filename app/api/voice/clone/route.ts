@@ -28,7 +28,7 @@ export const POST = withAuth(async (req, { userId }) => {
     // Validate persona ownership
     await personaService.getPersona(userId, personaId);
 
-    const elevenLabsKey = await apiKeyService.getApiKey(userId, 'elevenlabs');
+    const elevenLabsKey = await apiKeyService.getApiKeyWithEnvFallback(userId, 'elevenlabs');
     if (!elevenLabsKey) {
       return NextResponse.json(
         { success: false, error: 'API key do ElevenLabs não configurada' },

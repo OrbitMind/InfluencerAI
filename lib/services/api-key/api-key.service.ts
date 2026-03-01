@@ -42,6 +42,24 @@ export class ApiKeyService {
   }
 
   /**
+   * Retorna API key do banco (preferência) com fallback para variável de ambiente.
+   * Prioridade: chave do usuário no banco > variável de ambiente > null
+   */
+  async getApiKeyWithEnvFallback(userId: string, provider: string): Promise<string | null> {
+    const dbKey = await this.repository.getDecryptedKey(userId, provider);
+    if (dbKey) return dbKey;
+
+    const envFallbacks: Record<string, string | undefined> = {
+      replicate: process.env.REPLICATE_API_TOKEN,
+      openai: process.env.OPENAI_API_KEY,
+      elevenlabs: process.env.ELEVENLABS_API_KEY,
+      google: process.env.GOOGLE_GENERATIVE_AI_KEY,
+    };
+
+    return envFallbacks[provider] ?? null;
+  }
+
+  /**
    * Deleta uma API key
    */
   async deleteApiKey(id: string, userId: string) {

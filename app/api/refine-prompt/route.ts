@@ -21,7 +21,7 @@ export const POST = withAuth(async (request, { userId }) => {
     const activeProvider = provider || "openai"
 
     // Buscar API key do banco
-    const activeApiKey = await apiKeyService.getApiKey(userId, activeProvider)
+    const activeApiKey = await apiKeyService.getApiKeyWithEnvFallback(userId, activeProvider)
 
     if (!activeApiKey) {
       return NextResponse.json(

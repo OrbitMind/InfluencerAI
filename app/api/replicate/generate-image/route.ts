@@ -34,7 +34,7 @@ export const POST = withCredits('image', async (req, { userId }) => {
     const validated = schema.parse(body);
 
     // 1. Buscar API key do Replicate (descriptografada)
-    const replicateKey = await apiKeyService.getApiKey(userId, 'replicate');
+    const replicateKey = await apiKeyService.getApiKeyWithEnvFallback(userId, 'replicate');
 
     if (!replicateKey) {
       return NextResponse.json(
