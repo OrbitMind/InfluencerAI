@@ -34,6 +34,25 @@ export class FaceConsistencyService {
     return strategy;
   }
 
+  /**
+   * Resolve o model identifier com version hash pinado.
+   * Modelos community no Replicate exigem version hash para evitar 404.
+   */
+  private async resolveModelRef(apiKey: string, modelId: string): Promise<`${string}/${string}`> {
+    const [owner, name] = modelId.split('/');
+    try {
+      const resp = await fetch(`https://api.replicate.com/v1/models/${owner}/${name}`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const versionId: string | undefined = data?.latest_version?.id;
+        if (versionId) return `${modelId}:${versionId}` as `${string}/${string}`;
+      }
+    } catch { /* fall through to plain modelId */ }
+    return modelId as `${string}/${string}`;
+  }
+
   async generateConsistentImage(
     replicateAuth: string,
     userId: string,
@@ -56,10 +75,10 @@ export class FaceConsistencyService {
       input[strategy.inputMapping.prompt] = `img ${params.prompt}`;
     }
 
-    const output = await replicate.run(
-      strategy.modelId as `${string}/${string}`,
-      { input }
-    );
+    // Pin version hash to avoid 404 on community models without official deployment
+    const modelRef = await this.resolveModelRef(replicateAuth, strategy.modelId);
+
+    const output = await replicate.run(modelRef, { input });
 
     const imageUrl = Array.isArray(output) ? output[0] : output;
     if (!imageUrl || typeof imageUrl !== 'string') {

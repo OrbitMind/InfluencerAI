@@ -28,6 +28,23 @@ export class LipSyncService {
     return LIP_SYNC_MODELS.find((m) => m.id === id);
   }
 
+  private async resolveModelRef(apiKey: string, modelId: string): Promise<`${string}/${string}`> {
+    const parts = modelId.split('/');
+    if (parts.length < 2) return modelId as `${string}/${string}`;
+    const [owner, name] = parts;
+    try {
+      const resp = await fetch(`https://api.replicate.com/v1/models/${owner}/${name}`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const versionId: string | undefined = data?.latest_version?.id;
+        if (versionId) return `${modelId}:${versionId}` as `${string}/${string}`;
+      }
+    } catch { /* fall through */ }
+    return modelId as `${string}/${string}`;
+  }
+
   async generateLipSync(
     replicateKey: string,
     userId: string,
@@ -44,10 +61,8 @@ export class LipSyncService {
     const replicate = new Replicate({ auth: replicateKey, useFileOutput: false });
     const input = this.buildModelInput(model, params.imageUrl, params.audioUrl);
 
-    const output = await replicate.run(
-      modelInfo.replicateModelId as `${string}/${string}`,
-      { input }
-    );
+    const modelRef = await this.resolveModelRef(replicateKey, modelInfo.replicateModelId);
+    const output = await replicate.run(modelRef, { input });
 
     const videoUrl = Array.isArray(output) ? output[0] : output;
     if (!videoUrl || typeof videoUrl !== 'string') {

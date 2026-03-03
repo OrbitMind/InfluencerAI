@@ -6,6 +6,7 @@ export interface AIModel {
   type: "image" | "video"
   sourceImageParam?: string  // param name for image-to-video source (default: 'image')
   supportsImageInput?: boolean
+  requiresSourceImage?: boolean  // model only works with an input image (image-to-video only)
   inputSchema?: Record<string, unknown>
   runCount?: number
   coverImage?: string | null
@@ -104,8 +105,9 @@ export const VIDEO_MODELS: AIModel[] = [
     description: "Alta fidelidade image-to-video com câmera cinematográfica nativa",
     provider: "kwaivgi",
     type: "video",
-    sourceImageParam: "image",
+    sourceImageParam: "start_image",
     supportsImageInput: true,
+    requiresSourceImage: true,
   },
   {
     id: "fofr/kling-v1.5-pro",
@@ -115,6 +117,7 @@ export const VIDEO_MODELS: AIModel[] = [
     type: "video",
     sourceImageParam: "image",
     supportsImageInput: true,
+    requiresSourceImage: true,
   },
   {
     id: "minimax/video-01",
@@ -124,6 +127,7 @@ export const VIDEO_MODELS: AIModel[] = [
     type: "video",
     sourceImageParam: "first_frame_image",
     supportsImageInput: true,
+    requiresSourceImage: true,
   },
   {
     id: "luma/ray",

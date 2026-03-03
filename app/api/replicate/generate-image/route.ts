@@ -1,26 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createLogger } from '@/lib/utils/logger';
 import Replicate from 'replicate';
 import { ApiKeyService } from '@/lib/services/api-key/api-key.service';
-import { GenerationService } from '@/lib/services/generation/generation.service';
 import { withCredits } from '@/lib/utils/billing-middleware';
 
 const logger = createLogger('generate-image');
 
 const apiKeyService = new ApiKeyService();
-const generationService = new GenerationService();
 
 /**
  * POST /api/replicate/generate-image
- * Gera imagem usando Replicate e salva no histórico do usuário
- *
- * Fluxo:
- * 1. Valida autenticação
- * 2. Busca API key do Replicate do usuário (descriptografada)
- * 3. Gera imagem com Replicate
- * 4. Faz upload para Cloudinary
- * 5. Salva no histórico do banco de dados
+ * Cria uma predição Replicate e retorna o ID imediatamente.
+ * O cliente faz polling em /api/replicate/prediction-status para acompanhar o progresso.
  */
 const schema = z.object({
   modelId: z.string().min(1, 'Model ID é obrigatório'),
@@ -28,7 +20,7 @@ const schema = z.object({
   aspectRatio: z.string().optional(),
   width: z.number().optional(),
   height: z.number().optional(),
-  personaId: z.string().optional()
+  personaId: z.string().optional(),
 });
 
 export const POST = withCredits('image', async (req, { userId }) => {
@@ -36,65 +28,39 @@ export const POST = withCredits('image', async (req, { userId }) => {
     const body = await req.json();
     const validated = schema.parse(body);
 
-    // 1. Buscar API key do Replicate (descriptografada)
     const replicateKey = await apiKeyService.getApiKeyWithEnvFallback(userId, 'replicate');
-
     if (!replicateKey) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'API key do Replicate não configurada. Configure em /dashboard/settings'
-        },
+        { success: false, error: 'API key do Replicate não configurada. Configure em /dashboard/settings' },
         { status: 400 }
       );
     }
 
-    // 2. Criar cliente Replicate (useFileOutput: false retorna URLs diretas ao invés de FileOutput objects)
     const replicate = new Replicate({ auth: replicateKey, useFileOutput: false });
 
-    // 3. Construir input
-    const input: Record<string, unknown> = {
-      prompt: validated.prompt
-    };
-
+    const input: Record<string, unknown> = { prompt: validated.prompt };
     if (validated.aspectRatio) input.aspect_ratio = validated.aspectRatio;
     if (validated.width) input.width = validated.width;
     if (validated.height) input.height = validated.height;
 
-    // 4. Gerar imagem
-    const output = await replicate.run(
-      validated.modelId as `${string}/${string}`,
-      { input }
-    );
+    logger.info('Criando predição de imagem', { modelId: validated.modelId, userId });
 
-    // Normalizar output (pode ser string ou array de strings)
-    const imageUrl = Array.isArray(output) ? output[0] : output;
-
-    if (!imageUrl || typeof imageUrl !== 'string') {
-      logger.error('Replicate output inesperado:', { output });
-      throw new Error('Output inválido do Replicate');
-    }
-
-    // 5. Salvar geração (upload + banco)
-    const generation = await generationService.createGeneration({
-      userId,
-      type: 'image',
-      modelId: validated.modelId,
-      prompt: validated.prompt,
-      settings: { aspectRatio: validated.aspectRatio, width: validated.width, height: validated.height },
-      replicateUrl: imageUrl,
-      personaId: validated.personaId
+    const prediction = await replicate.predictions.create({
+      model: validated.modelId as `${string}/${string}`,
+      input,
     });
+
+    logger.info('Predição criada', { predictionId: prediction.id, status: prediction.status });
 
     return NextResponse.json({
       success: true,
       data: {
-        id: generation.id,
-        imageUrl: generation.outputUrl,
-        prompt: generation.prompt,
-        modelId: generation.modelId,
-        createdAt: generation.createdAt
-      }
+        predictionId: prediction.id,
+        status: prediction.status,
+        modelId: validated.modelId,
+        prompt: validated.prompt,
+        personaId: validated.personaId ?? null,
+      },
     });
   } catch (error: unknown) {
     logger.error('Image generation error:', { error });
@@ -106,10 +72,7 @@ export const POST = withCredits('image', async (req, { userId }) => {
       );
     }
 
-    const message = error instanceof Error ? error.message : 'Falha ao gerar imagem'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : 'Falha ao gerar imagem';
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 });

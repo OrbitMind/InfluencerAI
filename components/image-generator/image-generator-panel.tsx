@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Wand2 } from "lucide-react"
+import { Wand2, UserCircle2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,19 +12,22 @@ import { ImagePreview } from "./image-preview"
 import { FaceConsistencyControls } from "./face-consistency-controls"
 import { ImageUploadControl } from "@/components/shared/image-upload-control"
 import { ErrorMessage } from "@/components/shared/error-message"
+import { GenerationProgress } from "@/components/video-generator/generation-progress"
 import { useImageGeneration } from "@/lib/hooks/use-image-generation"
 import { useGenerationPipeline } from "@/lib/hooks/use-generation-pipeline"
 import { useReplicate } from "@/lib/context/replicate-context"
 import { usePersona } from "@/lib/context/persona-context"
+import { toast } from "sonner"
 import Link from "next/link"
 
 export function ImageGeneratorPanel() {
   const { isConfigured } = useReplicate()
   const { selectedPersona, getBasePrompt } = usePersona()
-  const { modelId, prompt, isLoading, imageUrl, error, setModelId, setPrompt, generate, reset } = useImageGeneration()
+  const { modelId, prompt, isLoading, imageUrl, error, generationPhase, generationLog, setModelId, setPrompt, generate, reset } = useImageGeneration()
   const pipeline = useGenerationPipeline()
   const [aspectRatio, setAspectRatio] = useState("1:1")
   const [customReferenceImage, setCustomReferenceImage] = useState<string | null>(null)
+  const [isSavingReference, setIsSavingReference] = useState(false)
   const prevPersonaId = useRef<string | null>(null)
 
   // Auto-fill prompt when persona is selected
@@ -48,6 +51,25 @@ export function ImageGeneratorPanel() {
       })
     } else {
       generate({ aspectRatio })
+    }
+  }
+
+  const handleSetAsReference = async () => {
+    if (!selectedPersona || !combinedImageUrl) return
+    setIsSavingReference(true)
+    try {
+      const res = await fetch(`/api/personas/${selectedPersona.id}/reference-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: combinedImageUrl }),
+      })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error || 'Erro ao salvar')
+      toast.success(`Imagem de referência da ${selectedPersona.name} atualizada!`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao definir referência')
+    } finally {
+      setIsSavingReference(false)
     }
   }
 
@@ -113,6 +135,8 @@ export function ImageGeneratorPanel() {
 
           <AspectRatioSelector value={aspectRatio} onChange={setAspectRatio} disabled={combinedLoading} />
 
+          <GenerationProgress phase={generationPhase} log={generationLog} type="image" />
+
           {combinedError && <ErrorMessage message={combinedError} onRetry={reset} />}
 
           <Button className="w-full" size="lg" onClick={handleGenerate} disabled={combinedLoading || !prompt.trim()}>
@@ -127,8 +151,24 @@ export function ImageGeneratorPanel() {
           <CardTitle>Pré-visualização</CardTitle>
           <CardDescription>Sua imagem de influenciador gerada</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <ImagePreview imageUrl={combinedImageUrl} isLoading={combinedLoading} onRegenerate={handleGenerate} />
+
+          {combinedImageUrl && selectedPersona && !combinedLoading && (
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleSetAsReference}
+              disabled={isSavingReference}
+            >
+              {isSavingReference ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <UserCircle2 className="h-4 w-4 mr-2" />
+              )}
+              {isSavingReference ? "Salvando..." : `Usar como referência da ${selectedPersona.name}`}
+            </Button>
+          )}
         </CardContent>
       </Card>
     </div>

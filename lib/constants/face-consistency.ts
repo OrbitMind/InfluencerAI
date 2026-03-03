@@ -3,17 +3,17 @@ import type { FaceConsistencyStrategyConfig, FaceConsistencyStrategyName } from 
 export const FACE_CONSISTENCY_STRATEGIES: Record<FaceConsistencyStrategyName, FaceConsistencyStrategyConfig> = {
   'pulid': {
     name: 'pulid',
-    label: 'PuLID',
-    modelId: 'bytedance/pulid',
-    description: 'Alta preservação de identidade facial com qualidade superior (recomendado)',
+    label: 'PuLID (Flux)',
+    modelId: 'bytedance/flux-pulid',
+    description: 'Alta preservação de identidade facial com Flux — qualidade superior (recomendado)',
     inputMapping: {
       faceImage: 'main_face_image',
       prompt: 'prompt',
-      strength: 'identity_scale',
+      strength: 'id_weight',
     },
-    defaultStrength: 0.8,
+    defaultStrength: 1.0,
     minStrength: 0.0,
-    maxStrength: 5.0,
+    maxStrength: 3.0,
     strengthStep: 0.1,
   },
   'instant-id': {
