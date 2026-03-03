@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Play, Loader2 } from "lucide-react"
+import { Play, Loader2, AlertTriangle } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -25,6 +26,8 @@ interface ModelOptions {
   imageModel?: string
   videoModel?: string
   faceConsistencyStrategy?: string
+  videoDuration?: number
+  useLipSync?: boolean
 }
 
 interface CampaignExecutionPanelProps {
@@ -42,9 +45,12 @@ const EXECUTION_STEPS: { key: ExecutionStep; label: string; description: string 
   { key: "captions", label: "Gerar Legendas", description: "Cria legendas animadas estilo Reels" },
 ]
 
+const VIDEO_DURATIONS = [4, 5, 6, 8, 10] // seconds; pipeline snaps to nearest valid per model
+
 const DEFAULT_FACE_STRATEGY = "pulid"
 const DEFAULT_IMAGE_MODEL = "google/nano-banana-pro"
 const DEFAULT_VIDEO_MODEL = "google/veo-3.1"
+const DEFAULT_DURATION = 6
 const CREDIT_COSTS = { image: 1, video: 3 }
 
 async function fetchModels(type: "image" | "video"): Promise<TransformedModel[]> {
@@ -133,6 +139,7 @@ export function CampaignExecutionPanel({
   ]
   const [selectedSteps, setSelectedSteps] = useState<ExecutionStep[]>(defaultSteps)
   const [faceStrategy, setFaceStrategy] = useState(DEFAULT_FACE_STRATEGY)
+  const [videoDuration, setVideoDuration] = useState(DEFAULT_DURATION)
 
   const [imageModels, setImageModels] = useState<TransformedModel[]>([])
   const [videoModels, setVideoModels] = useState<TransformedModel[]>([])
@@ -149,7 +156,6 @@ export function CampaignExecutionPanel({
       setLoadingImage(false)
     })
     fetchModels("video").then((models) => {
-      // Only image-to-video models (preserve persona photo)
       const compatible = models.filter((m) => m.supportsImageInput)
       setVideoModels(compatible)
       const preferred = compatible.find((m) => m.id === DEFAULT_VIDEO_MODEL)
@@ -166,6 +172,8 @@ export function CampaignExecutionPanel({
 
   const hasImage = selectedSteps.includes("image")
   const hasVideo = selectedSteps.includes("video")
+  const hasAudio = selectedSteps.includes("audio") || selectedSteps.includes("lip-sync")
+  const personaHasVoice = !!campaign.persona.voiceId
 
   const canExecute = selectedSteps.length > 0 && !isExecuting
   const status = campaign.status as CampaignStatus
@@ -176,6 +184,8 @@ export function CampaignExecutionPanel({
       imageModel: imageModel || undefined,
       videoModel: videoModel || undefined,
       faceConsistencyStrategy: campaign.persona.referenceImageUrl ? faceStrategy : undefined,
+      videoDuration,
+      useLipSync: selectedSteps.includes("lip-sync"),
     })
   }
 
@@ -192,6 +202,22 @@ export function CampaignExecutionPanel({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
+        {/* Voice warning */}
+        {hasAudio && !personaHasVoice && (
+          <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>
+              Persona sem voz configurada — narração e lip sync serão pulados.{" "}
+              <Link
+                href={`/dashboard/personas/${campaign.personaId}`}
+                className="underline underline-offset-2 font-medium"
+              >
+                Configurar voz →
+              </Link>
+            </span>
+          </div>
+        )}
+
         {/* Steps */}
         <div className="space-y-3">
           {EXECUTION_STEPS.map((step) => (
@@ -255,16 +281,44 @@ export function CampaignExecutionPanel({
           )}
 
           {hasVideo && (
-            <ModelSelect
-              label="Modelo de Vídeo"
-              credits={CREDIT_COSTS.video}
-              value={videoModel}
-              models={videoModels}
-              loading={loadingVideo}
-              disabled={isRunning}
-              onChange={setVideoModel}
-              hint="Apenas modelos image-to-video — preservam a persona"
-            />
+            <>
+              <ModelSelect
+                label="Modelo de Vídeo"
+                credits={CREDIT_COSTS.video}
+                value={videoModel}
+                models={videoModels}
+                loading={loadingVideo}
+                disabled={isRunning}
+                onChange={setVideoModel}
+                hint="Apenas modelos image-to-video — preservam a persona"
+              />
+
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Duração do Vídeo</Label>
+                <Select
+                  value={String(videoDuration)}
+                  onValueChange={(v) => setVideoDuration(Number(v))}
+                  disabled={isRunning}
+                >
+                  <SelectTrigger className="w-full text-sm h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VIDEO_DURATIONS.map((d) => (
+                      <SelectItem key={d} value={String(d)}>
+                        {d}s
+                        {d === DEFAULT_DURATION && (
+                          <span className="ml-1.5 text-xs opacity-60">(recomendado)</span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Alguns modelos aceitam apenas valores específicos — o valor mais próximo será usado.
+                </p>
+              </div>
+            </>
           )}
         </div>
 

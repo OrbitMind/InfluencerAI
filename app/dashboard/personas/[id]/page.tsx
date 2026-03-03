@@ -76,6 +76,7 @@ export default function PersonaDetailPage() {
         persona={persona}
         onEdit={() => setShowEdit(true)}
         onLipSync={() => setShowLipSync(true)}
+        onRefresh={loadPersona}
       />
 
       <div className="grid gap-6 lg:grid-cols-3">

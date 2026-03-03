@@ -64,6 +64,8 @@ export default function CampaignDetailPage() {
     if (result) {
       toast.success("Campanha duplicada!")
       router.push(`/dashboard/campaigns/${result.id}`)
+    } else {
+      toast.error("Erro ao duplicar campanha")
     }
   }
 

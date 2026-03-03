@@ -40,13 +40,13 @@ export function CampaignDetailHeader({ campaign, onDuplicate, onDelete }: Campai
 
         <div className="flex items-center gap-2">
           {onDuplicate && (
-            <Button variant="outline" size="sm" onClick={onDuplicate}>
+            <Button variant="secondary" size="sm" onClick={onDuplicate}>
               <Copy className="h-4 w-4 mr-2" />
               Duplicar
             </Button>
           )}
           {onDelete && (
-            <Button variant="outline" size="sm" className="text-destructive" onClick={onDelete}>
+            <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={onDelete}>
               <Trash2 className="h-4 w-4 mr-2" />
               Excluir
             </Button>

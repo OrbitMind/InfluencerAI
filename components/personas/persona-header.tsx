@@ -1,47 +1,113 @@
 "use client"
 
 import Link from "next/link"
-import { ImageIcon, VideoIcon, Pencil, Megaphone, Mic, LayoutGrid } from "lucide-react"
+import { useRef, useState } from "react"
+import { ImageIcon, VideoIcon, Pencil, Megaphone, Mic, LayoutGrid, Camera, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { PERSONA_NICHES, PERSONA_PLATFORMS, PERSONA_TONES } from "@/lib/types/persona"
 import type { PersonaData } from "@/lib/types/persona"
+import { toast } from "sonner"
 
 interface PersonaHeaderProps {
   persona: PersonaData
   onEdit: () => void
   onLipSync?: () => void
+  onRefresh?: () => void
 }
 
-export function PersonaHeader({ persona, onEdit, onLipSync }: PersonaHeaderProps) {
+export function PersonaHeader({ persona, onEdit, onLipSync, onRefresh }: PersonaHeaderProps) {
   const nicheLabel = PERSONA_NICHES.find((n) => n.value === persona.niche)?.label
   const platformLabel = PERSONA_PLATFORMS.find((p) => p.value === persona.targetPlatform)?.label
   const toneLabel = PERSONA_TONES.find((t) => t.value === persona.contentTone)?.label
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isUploading, setIsUploading] = useState(false)
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Apenas imagens são permitidas')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Máximo 10MB')
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      // 1. Upload para Cloudinary
+      const formData = new FormData()
+      formData.append('file', file)
+      const uploadRes = await fetch('/api/upload/image', { method: 'POST', body: formData })
+      const uploadJson = await uploadRes.json()
+      if (!uploadJson.url) throw new Error(uploadJson.error || 'Erro no upload')
+
+      // 2. Salvar como referência da persona
+      const refRes = await fetch(`/api/personas/${persona.id}/reference-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: uploadJson.url }),
+      })
+      const refJson = await refRes.json()
+      if (!refJson.success) throw new Error(refJson.error || 'Erro ao salvar referência')
+
+      toast.success('Imagem de referência atualizada!')
+      onRefresh?.()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar imagem')
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   return (
     <div className="flex flex-col sm:flex-row gap-6">
-      <div className="shrink-0">
-        {persona.referenceImageUrl ? (
-          <div className="h-32 w-32 rounded-xl overflow-hidden bg-muted">
+      {/* Avatar com botão de upload */}
+      <div className="shrink-0 relative group">
+        <div
+          className="h-32 w-32 rounded-xl overflow-hidden bg-primary/10 cursor-pointer"
+          onClick={() => !isUploading && fileInputRef.current?.click()}
+        >
+          {persona.referenceImageUrl ? (
             <img
               src={persona.referenceImageUrl}
               alt={persona.name}
               className="h-full w-full object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-                const fallback = e.currentTarget.parentElement?.nextElementSibling as HTMLElement
-                if (fallback) fallback.style.display = 'flex'
-              }}
             />
-          </div>
-        ) : null}
-        {!persona.referenceImageUrl || true ? (
-          <div className="flex h-32 w-32 items-center justify-center rounded-xl bg-primary/10" style={{ display: persona.referenceImageUrl ? 'none' : 'flex' }}>
-            <span className="text-4xl font-bold text-primary">
-              {persona.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-        ) : null}
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <span className="text-4xl font-bold text-primary">
+                {persona.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Overlay de câmera */}
+        <div
+          className="absolute inset-0 rounded-xl flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+          onClick={() => !isUploading && fileInputRef.current?.click()}
+        >
+          {isUploading ? (
+            <Loader2 className="h-6 w-6 text-white animate-spin" />
+          ) : (
+            <Camera className="h-6 w-6 text-white" />
+          )}
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+          disabled={isUploading}
+        />
       </div>
 
       <div className="flex-1 min-w-0">
