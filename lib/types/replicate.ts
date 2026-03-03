@@ -27,7 +27,9 @@ export interface GenerateVideoRequest {
   modelId: string
   prompt: string
   imageUrl?: string
+  imageParamName?: string
   duration?: number
+  cameraMovement?: string
 }
 
 export interface APIResponse<T> {

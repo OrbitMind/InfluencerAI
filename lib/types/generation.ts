@@ -6,10 +6,30 @@ export interface ImageGenerationState {
   error: string | null
   generatedAt: Date | null
   requestId: string | null
+  predictionId: string | null
+  generationPhase: GenerationPhase
+  generationLog: GenerationLogEntry[]
+}
+
+export type GenerationPhase =
+  | 'idle'
+  | 'creating'
+  | 'starting'
+  | 'processing'
+  | 'uploading'
+  | 'done'
+  | 'failed'
+
+export interface GenerationLogEntry {
+  phase: GenerationPhase
+  message: string
+  timestamp: Date
 }
 
 export interface VideoGenerationState {
   modelId: string
+  videoIntention: import('@/lib/constants/video-intentions').VideoIntention
+  cameraMovement: import('@/lib/types/camera-control').CameraMovement | undefined
   productName: string
   productDescription: string
   callToAction: string
@@ -20,6 +40,9 @@ export interface VideoGenerationState {
   error: string | null
   generatedAt: Date | null
   requestId: string | null
+  predictionId: string | null
+  generationPhase: GenerationPhase
+  generationLog: GenerationLogEntry[]
 }
 
 export interface GenerationHistory {

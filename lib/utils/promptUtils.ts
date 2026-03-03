@@ -32,7 +32,7 @@ export function getSystemPrompt(type: 'image' | 'video'): string {
 }
 
 /**
- * Constrói um prompt completo para vídeo de produto
+ * Constrói um prompt completo para vídeo de produto (legado)
  */
 export function buildProductVideoPrompt(
   productName: string,
@@ -41,4 +41,49 @@ export function buildProductVideoPrompt(
   additionalPrompt: string
 ): string {
   return `${productName}: ${productDescription}. ${callToAction}. ${additionalPrompt}`.trim()
+}
+
+/**
+ * Constrói o prompt de vídeo baseado na intenção selecionada
+ */
+export function buildVideoPrompt(
+  intention: import('@/lib/constants/video-intentions').VideoIntention,
+  field1: string,
+  field2: string,
+  field3: string,
+  field4: string
+): string {
+  const parts: string[] = []
+
+  switch (intention) {
+    case 'product':
+      if (field1) parts.push(field1)
+      if (field2) parts.push(field2)
+      if (field3) parts.push(field3)
+      if (field4) parts.push(field4)
+      break
+    case 'lifestyle':
+      if (field1) parts.push(`Lifestyle video: ${field1}`)
+      if (field2) parts.push(field2)
+      if (field3) parts.push(`Mood: ${field3}`)
+      if (field4) parts.push(field4)
+      break
+    case 'social':
+      if (field1) parts.push(`Social media content: ${field1}`)
+      if (field2) parts.push(field2)
+      if (field3) parts.push(field3)
+      if (field4) parts.push(`Visual style: ${field4}`)
+      break
+    case 'testimonial':
+      if (field1) parts.push(`Honest review of ${field1}`)
+      if (field2) parts.push(field2)
+      if (field3) parts.push(field3)
+      if (field4) parts.push(field4)
+      break
+    case 'freestyle':
+      if (field4) parts.push(field4)
+      break
+  }
+
+  return parts.filter(Boolean).join('. ').trim()
 }
