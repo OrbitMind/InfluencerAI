@@ -1,39 +1,42 @@
 import type { MotionModelInfo } from '@/lib/types/motion'
 
 export const MOTION_MODELS: Record<string, MotionModelInfo> = {
-  'animate-diff': {
-    id: 'animate-diff',
-    name: 'AnimateDiff',
-    replicateModelId: 'lucataco/animate-diff',
-    description: 'Anima imagens estáticas com movimentos fluidos e naturais',
+  'stable-video-diffusion': {
+    id: 'stable-video-diffusion',
+    name: 'Stable Video Diffusion',
+    replicateModelId: 'stability-ai/stable-video-diffusion',
+    description: 'Anima imagens com movimento físico realista e fluido',
+    supportsReferenceVideo: false,
+    supportsStylePrompt: false,
+    pros: ['Movimento físico realista', 'Muito rápido', 'Alta consistência'],
+    cons: ['Sem controle por texto', 'Curta duração (~2s)'],
+  },
+
+  'minimax-video': {
+    id: 'minimax-video',
+    name: 'MiniMax Video',
+    replicateModelId: 'minimax/video-01-live',
+    description: 'Anima personas com controle detalhado por prompt de texto',
     supportsReferenceVideo: false,
     supportsStylePrompt: true,
-    pros: ['Movimentos suaves', 'Bom para expressões faciais', 'Rápido'],
-    cons: ['Sem controle de pose'],
-  },
-  cogvideox: {
-    id: 'cogvideox',
-    name: 'CogVideoX',
-    replicateModelId: 'devxpy/cogvideox-5b',
-    description: 'Geração de vídeo de alta qualidade com controle por prompt',
-    supportsReferenceVideo: true,
-    supportsStylePrompt: true,
-    pros: ['Alta qualidade', 'Controle detalhado por prompt', 'Coerência temporal'],
+    recommended: true,
+    pros: ['Controle por texto', 'Mantém identidade da persona', 'Boa qualidade'],
     cons: ['Mais lento'],
   },
+
   'live-portrait-motion': {
     id: 'live-portrait-motion',
     name: 'LivePortrait Motion',
     replicateModelId: 'fofr/live-portrait',
-    description: 'Anima retratos com expressões e movimentos de vídeos de referência',
+    description: 'Anima retratos seguindo movimentos de um vídeo de referência',
     supportsReferenceVideo: true,
     supportsStylePrompt: false,
-    pros: ['Expressões ricas', 'Segue movimentos de referência', 'Visual cinematográfico'],
-    cons: ['Requer imagem de alta qualidade'],
+    pros: ['Expressões ricas', 'Sincroniza com vídeo de referência', 'Visual cinematográfico'],
+    cons: ['Requer vídeo de referência', 'Requer imagem de alta qualidade'],
   },
 }
 
-export const DEFAULT_MOTION_MODEL = 'animate-diff'
+export const DEFAULT_MOTION_MODEL = 'minimax-video'
 
 export const MOTION_MODEL_LIST = Object.values(MOTION_MODELS)
 

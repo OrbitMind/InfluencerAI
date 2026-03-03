@@ -1,4 +1,4 @@
-export type MotionModelId = 'animate-diff' | 'cogvideox' | 'live-portrait-motion'
+export type MotionModelId = 'stable-video-diffusion' | 'minimax-video' | 'live-portrait-motion'
 
 export const ANIMATION_STYLES = [
   'walk', 'dance', 'wave', 'nod', 'talk', 'laugh', 'sit', 'stand-up', 'custom',
@@ -12,6 +12,7 @@ export interface MotionModelInfo {
   description: string
   supportsReferenceVideo: boolean
   supportsStylePrompt: boolean
+  recommended?: boolean  // destaque como opção recomendada na UI
   pros: string[]
   cons: string[]
 }
@@ -23,7 +24,15 @@ export interface MotionParams {
   customPrompt?: string       // usado quando style = 'custom' ou para enriquecer
   referenceVideoUrl?: string  // vídeo de referência para motion capture
   duration?: number
-  modelId?: MotionModelId
+  modelId?: string            // ID interno (ex: 'minimax-video') ou Replicate ID direto (ex: 'minimax/video-01-live')
+}
+
+/** Retorno imediato do POST /api/motion (predição criada, ainda processando) */
+export interface MotionPredictionData {
+  predictionId: string
+  modelId: string
+  prompt: string
+  personaId: string
 }
 
 export interface MotionResult {

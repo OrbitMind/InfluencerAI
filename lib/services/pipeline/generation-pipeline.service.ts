@@ -16,7 +16,7 @@ import type {
 } from '@/lib/types/pipeline';
 import type { VoiceSettings } from '@/lib/types/voice';
 import type { CameraMovement } from '@/lib/types/camera-control'
-import { getVideoSourceImageParam } from '@/lib/utils/video-model-params';
+import { getVideoSourceImageParam, normalizeVideoDuration } from '@/lib/utils/video-model-params';
 import type { Prisma } from '@prisma/client';
 import { toJsonValue } from '@/lib/utils/prisma-helpers';
 
@@ -157,7 +157,12 @@ export class GenerationPipelineService {
       const sourceImageParam = params.sourceImageParam ?? getVideoSourceImageParam(params.modelId);
       input[sourceImageParam] = sourceImage;
     }
-    if (params.duration) input.duration = params.duration;
+    if (params.duration) input.duration = normalizeVideoDuration(params.modelId, params.duration);
+
+    // Veo 3 requer generate_audio: true para ativar áudio nativo
+    if (params.modelId.startsWith('google/veo-3')) {
+      input.generate_audio = true;
+    }
 
     // Enriquecer com camera control se especificado
     const cameraMovement = params.promptContext?.cameraMovement as CameraMovement | undefined;
@@ -263,17 +268,10 @@ export class GenerationPipelineService {
     userId: string,
     replicateKey: string,
     params: import('@/lib/types/motion').MotionParams
-  ): Promise<PipelineResult> {
+  ): Promise<import('@/lib/types/motion').MotionPredictionData> {
     const { MotionService } = await import('@/lib/services/motion/motion.service');
     const motionService = MotionService.getInstance();
-    const result = await motionService.generateMotion(replicateKey, userId, params);
-    return {
-      generationId: result.generationId,
-      outputUrl: result.outputUrl,
-      thumbnailUrl: result.thumbnailUrl,
-      personaId: params.personaId,
-      metadata: { modelId: result.modelId, animationStyle: result.animationStyle, prompt: result.animationStyle },
-    };
+    return motionService.createMotionPrediction(replicateKey, userId, params);
   }
 
   async generatePersonaLipSyncVideo(
